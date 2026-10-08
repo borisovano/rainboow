@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מסע מתמטי — הירח ועולם הקשת</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Heebo', sans-serif; background-color: #87CEEB; touch-action: none; user-select: none; transition: background-color 2s; }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        .interactive-ui { pointer-events: auto; }
+        .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 20; opacity: 0; visibility: hidden; transition: opacity 0.3s; pointer-events: auto; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background: white; border-radius: 24px; padding: 2rem; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transform: scale(0.8); transition: transform 0.3s; width: 450px; max-width: 90%; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .btn { background: linear-gradient(to bottom, #4ADE80, #22C55E); border: none; border-radius: 12px; color: white; padding: 0.75rem 1rem; font-size: 1.25rem; font-weight: 900; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; }
+        .btn:active { transform: translateY(4px); box-shadow: none; }
+        .btn-purple { background: linear-gradient(to bottom, #A855F7, #9333EA); }
+        .btn-blue { background: linear-gradient(to bottom, #3B82F6, #2563EB); }
+        .btn-red { background: linear-gradient(to bottom, #EF4444, #DC2626); }
+        .btn-orange { background: linear-gradient(to bottom, #F97316, #EA580C); }
+        .hud-top { display: flex; justify-content: space-between; padding: 1rem; }
+        .hud-panel { background: rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 0.5rem 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.5rem; }
+        .powerup-panel { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; align-items: flex-start;}
+        .powerup-item { background: rgba(255, 255, 255, 0.9); border-radius: 8px; padding: 0.25rem 0.75rem; font-size: 0.9rem; font-weight: bold; border-right: 4px solid; display: none; }
+        .powerup-item.active { display: block; }
+        .answer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+        .answer-btn { background: #F3F4F6; border: 4px solid #E5E7EB; border-radius: 16px; font-size: 2rem; font-weight: bold; color: #374151; padding: 1rem; cursor: pointer; }
+        .answer-btn:hover { background: #E5E7EB; transform: scale(1.05); }
+        .answer-btn.correct { background: #86EFAC; border-color: #22C55E; color: #14532D; }
+        .answer-btn.wrong { background: #FCA5A5; border-color: #EF4444; color: #7F1D1D; }
+        #controls { position: absolute; bottom: 2rem; left: 0; width: 100%; display: flex; justify-content: center; gap: 1rem; pointer-events: none; }
+        @media (min-width: 768px) { #controls { display: none; } }
+        .control-btn { width: 60px; height: 60px; background: rgba(255,255,255,0.7); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; pointer-events: auto; }
+        #rainbow-powers { display:none; max-width:310px; max-height:180px; overflow:auto; background:rgba(255,255,255,.93); border-radius:12px; padding:8px; font-size:14px; color:#493277; }
+        #rainbow-powers.active { display:block; }
+        #rainbow-power-buttons { display:flex; flex-wrap:wrap; gap:5px; margin-top:5px; }
+        #rainbow-power-buttons button { border:1px solid #bda1e4; border-radius:8px; padding:6px; background:#eee5ff; cursor:pointer; }
+        #rainbow-power-buttons button:disabled { opacity:.55; cursor:default; }
+        .math-text { direction: ltr; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="canvas-container"></div>
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div>
+                <div class="hud-panel interactive-ui">
+                    <span class="text-2xl">⭐</span>
+                    <span id="score-display" class="text-xl text-yellow-600 font-bold">0</span>
+                </div>
+                <div id="rainbow-powers" class="interactive-ui"><div id="rainbow-power-summary"></div><div id="rainbow-power-buttons">
+                    <button id="rainbow-dash" onclick="useRainbowPower('dash')">זינוק ⇧</button>
+                    <button id="rainbow-gust" onclick="useRainbowPower('gust')">רוח R</button>
+                    <button id="rainbow-cloak" onclick="useRainbowPower('cloak')">היעלמות C</button>
+                    <button id="rainbow-sun" onclick="useRainbowPower('sun')">שמש Q</button>
+                </div></div>
+                <div class="powerup-panel">
+                    <div id="power-jump" class="powerup-item" style="border-color: #F59E0B; color: #B45309;">קפיצת על 🦘</div>
+                    <div id="power-shield" class="powerup-item" style="border-color: #10B981; color: #047857;">מגן טעות אחת 🛡️</div>
+                    <div id="power-slow" class="powerup-item" style="border-color: #3B82F6; color: #1D4ED8;">אויבים איטיים 🐌</div>
+                    <div id="power-god" class="powerup-item" style="border-color: #EF4444; color: #B91C1C;">מגע קטלני! 💥</div>
+                </div>
+            </div>
+            <div id="space-warning" class="hud-panel interactive-ui hidden text-purple-600 font-black h-12 border-2 border-purple-500">
+                שער החלל נפתח! 🚀
+            </div>
+        </div>
+        <div id="controls">
+            <div class="control-btn" id="btn-right">◀️</div>
+            <div class="control-btn" id="btn-action">⏫</div>
+            <div class="control-btn" id="btn-left">▶️</div>
+            <div class="control-btn" id="btn-up" style="position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);">🔼</div>
+            <div class="control-btn" id="btn-down" style="position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);">🔽</div>
+        </div>
+    </div>
+
+    <!-- Start Modal -->
+    <div id="start-modal" class="modal-overlay active">
+        <div class="modal-content interactive-ui">
+            <h1 class="text-4xl text-purple-600 mb-2 font-black">מסע מתמטי</h1>
+            <p class="text-gray-600 mb-6 font-bold">בחר את הרמה שלך כדי להתחיל (50 כוכבים פותחים מסע לירח דרך שלושה שערי חשיבה!)</p>
+            <div class="grid grid-cols-2 gap-4">
+                <button class="btn btn-purple" onclick="startGame(1)">כיתה א'</button>
+                <button class="btn btn-blue" onclick="startGame(2)">כיתה ב'</button>
+                <button class="btn btn-orange" onclick="startGame(3)">כיתה ג'</button>
+                <button class="btn btn-red" onclick="startGame(4)">כיתה ד'</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Powerup Modal -->
+    <div id="powerup-modal" class="modal-overlay">
+        <div class="modal-content interactive-ui" style="background: linear-gradient(135deg, #FFFBEB, #FEF3C7); border: 4px solid #F59E0B;">
+            <h2 class="text-3xl text-yellow-600 mb-2 font-black">כוח חדש!</h2>
+            <p id="powerup-desc" class="text-gray-800 mb-6 font-bold text-xl">...</p>
+            <button id="btn-powerup-continue" class="btn btn-purple w-full" onclick="continueFromPowerup()">המשך</button>
+        </div>
+    </div>
+
+    <!-- Challenge Modal -->
+    <div id="challenge-modal" class="modal-overlay">
+        <div class="modal-content interactive-ui">
+            <h2 class="text-2xl text-blue-600 mb-2 font-bold" id="challenge-story">פתור את זה!</h2>
+            <div id="predator-timer" class="text-4xl text-red-600 font-black hidden mb-2">30</div>
+            <p id="challenge-hint" class="text-sm text-green-600 font-bold h-4"></p>
+            <div class="bg-blue-50 rounded-xl p-4 my-2">
+                <div class="text-4xl text-center text-blue-800 font-black math-text" id="math-problem">2 + 3 = ?</div>
+            </div>
+            <div class="answer-grid" id="answers-container"></div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="game-over-modal" class="modal-overlay">
+        <div class="modal-content interactive-ui">
+            <h1 class="text-5xl text-red-600 mb-4 font-black">פסלת!</h1>
+            <p class="text-gray-600 mb-6 font-bold">הטורף תפס אותך או שלא ענית נכון בזמן...</p>
+            <button class="btn btn-purple w-full" onclick="location.reload()">נסה שוב</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+    synth.volume.value = -5;
+
+    function playJumpSound() { if(Tone.context.state === 'running') synth.triggerAttackRelease("C4", "16n"); }
+    function playSuccessSound() { if(Tone.context.state === 'running') synth.triggerAttackRelease(["C4", "E4", "G4"], "8n"); }
+    function playFailSound() { if(Tone.context.state === 'running') synth.triggerAttackRelease("C3", "4n"); }
+    function playPopSound() { if(Tone.context.state === 'running') synth.triggerAttackRelease("G2", "16n"); }
+    function playExplosionSound() { if(Tone.context.state === 'running') synth.triggerAttackRelease("C1", "8n"); }
+    function playPowerupSound() { if(Tone.context.state === 'running') synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n"); }
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 30, 300);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(50, 80, 50);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    let gameState = 'START';
+    let selectedGrade = 1;
+    let score = 0;
+    let currentChallenge = null;
+    let activeObstacle = null;
+    
+    let isSpaceRealmOpen = false;
+    let spaceWall = null; // The physical barrier
+    let explodingPredator = null; 
+    
+    const keys = { left: false, right: false, up: false, down: false };
+    
+    // --- Powerups State ---
+    let totalFriends = 8;
+    let friendsRescued = 0;
+    let currentRealm = 'earth';
+    const powerups = {
+        superJump: false,   // Power 1
+        extraLife: false,   // Power 2
+        slowEnemies: false, // Power 3
+        godMode: false      // Power 4 (All Friends)
+    };
+    let currentMistakes = 0;
+
+    const rainbowPowers = {dash:false,glide:false,bonus:false,clock:false,hint:false,gust:false,cloak:false,sun:false};
+    const rainbowTimers = {dash:0,gust:0,cloak:0,sun:0,dashActive:0,cloakActive:0};
+    const rainbowPowerNames = ['זינוק קשת','גלישת נוצה','מטבעות כפולים','שעון עננים','עין חכמה','משב רוח','היעלמות','קרן שמש'];
+    const rainbowPowerKeys = Object.keys(rainbowPowers);
+    const rainbowPowerDescriptions = [
+        'Shift או כפתור זינוק: מהירות כפולה לשתי שניות. אפשר שוב לאחר 6 שניות.',
+        'בזמן נפילה תרדו לאט ותוכלו לגלוש באוויר.',
+        'כל הנקודות שתרוויחו בעולם הקשת יוכפלו.',
+        'במפגש עם ענן תקבלו 45 שניות לפתרון במקום 30.',
+        'בכל תרגיל בעולם הקשת תיעלם תשובה שגויה אחת.',
+        'R או כפתור רוח: דחפו עננים קרובים לאחור. אפשר שוב לאחר 8 שניות.',
+        'C או כפתור היעלמות: העננים לא יראו או יתפסו אתכם למשך 4 שניות. אפשר שוב לאחר 12 שניות.',
+        'Q או כפתור שמש: פזרו ענן אחד בטווח 35 צעדים. אפשר שוב לאחר 10 שניות.'
+    ];
+
+    function refreshRainbowPowers() {
+        const panel=document.getElementById('rainbow-powers');
+        if(currentRealm==='rainbow') panel.classList.add('active');else panel.classList.remove('active');
+        const names=rainbowPowerKeys.filter(k=>rainbowPowers[k]).map(k=>rainbowPowerNames[rainbowPowerKeys.indexOf(k)]);
+        document.getElementById('rainbow-power-summary').textContent=names.length ? names.join(' · ') : 'הצילו חברי ענן כדי לקבל כוחות חדשים';
+        for(const key of ['dash','gust','cloak','sun']) {
+            const button=document.getElementById('rainbow-'+key);
+            button.style.display=rainbowPowers[key]?'':'none';
+            button.disabled=gameState!=='PLAYING'||rainbowTimers[key]>0;
+            const labels={dash:'זינוק ⇧',gust:'רוח R',cloak:'היעלמות C',sun:'שמש Q'};
+            button.textContent=labels[key]+(rainbowTimers[key]>0?' ('+Math.ceil(rainbowTimers[key])+')':'');
+        }
+    }
+
+    function placeCloudWithinRainbow(pred,x,z) {
+        const p=rainbowPolar(x,z),point=rainbowPoint(Math.max(.025,Math.min(Math.PI-.025,p.angle)),Math.max(218,Math.min(342,p.radius)));
+        pred.mesh.position.x=point.x;pred.mesh.position.z=point.z;
+    }
+
+    function useRainbowPower(key) {
+        if(gameState!=='PLAYING'||currentRealm!=='rainbow'||!rainbowPowers[key]||rainbowTimers[key]>0)return;
+        if(key==='dash'){rainbowTimers.dash=6;rainbowTimers.dashActive=2;}
+        if(key==='cloak'){rainbowTimers.cloak=12;rainbowTimers.cloakActive=4;bodyMat.transparent=true;bodyMat.opacity=.25;}
+        if(key==='gust'||key==='sun') {
+            const nearby=predators.filter(p=>p.active&&p.isCloud&&Math.hypot(p.mesh.position.x-playerGroup.position.x,p.mesh.position.z-playerGroup.position.z)<35);
+            if(!nearby.length){document.getElementById('space-warning').textContent='אין כרגע עננים בטווח הכוח';return;}
+            if(key==='gust') {
+                nearby.forEach(p=>{let dx=p.mesh.position.x-playerGroup.position.x,dz=p.mesh.position.z-playerGroup.position.z;const d=Math.hypot(dx,dz);if(d<.01){dx=1;dz=0;}const length=Math.hypot(dx,dz);placeCloudWithinRainbow(p,p.mesh.position.x+dx/length*22,p.mesh.position.z+dz/length*22);});
+                rainbowTimers.gust=8;
+            } else {
+                nearby.sort((a,b)=>Math.hypot(a.mesh.position.x-playerGroup.position.x,a.mesh.position.z-playerGroup.position.z)-Math.hypot(b.mesh.position.x-playerGroup.position.x,b.mesh.position.z-playerGroup.position.z));
+                nearby[0].active=false;nearby[0].mesh.visible=false;rainbowTimers.sun=10;addScore(5);
+            }
+        }
+        playPowerupSound();refreshRainbowPowers();
+    }
+
+    function updateRainbowPowers(delta) {
+        for(const key of Object.keys(rainbowTimers))rainbowTimers[key]=Math.max(0,rainbowTimers[key]-delta);
+        bodyMat.transparent=currentRealm==='rainbow'&&rainbowTimers.cloakActive>0;
+        bodyMat.opacity=bodyMat.transparent?.25:1;
+        refreshRainbowPowers();
+    }
+
+    function applyRainbowHint() {
+        if(currentRealm!=='rainbow'||!rainbowPowers.hint)return;
+        const wrong=Array.from(document.querySelectorAll('.answer-btn')).find(btn=>Number(btn.textContent)!==currentChallenge.answer);
+        if(wrong){wrong.disabled=true;wrong.style.visibility='hidden';document.getElementById('challenge-hint').textContent+=' עין חכמה הסירה תשובה שגויה אחת.';}
+    }
+
+    const interactables = [];
+    const npcList = [];
+    const dynamicPaths = []; 
+    const predators = [];
+    let predatorInterval = null;
+    let predatorTimeLeft = 30;
+    const WORLD_RADIUS = 390;
+    const MOON_ENTRY = -870;
+    const MOON_FAR = -1430;
+    const MOON_HALF_WIDTH = 320;
+    const WALK_SPEED = 24; // 480 units outside Earth's rim / 24 = 20 seconds
+    let moonVisited = false;
+    const bridgeCheckpoints = [];
+    let moonIsland = null;
+    const moonPlatforms = [];
+    let rainbowWorld = null;
+    const rainbowGates = [];
+    const rainbowDecorations = [];
+    const RAINBOW_COLORS = [0xf55768,0xffa342,0xffdb54,0x70d887,0x52cee9,0x728cf0,0xb480ee];
+    const TERRAIN_STEP = 10;
+    const TERRAIN_COLUMNS = 64;
+    const TERRAIN_ROWS = 56;
+    const moonHeights = [];
+
+    function sculptMoonHeight(x, z) {
+        const depth = MOON_ENTRY-z;
+        const smooth = value => { const t=Math.max(0,Math.min(1,value)); return t*t*(3-2*t); };
+        const fade = smooth((depth-25)/55) * smooth((560-depth)/30) * smooth((320-Math.abs(x))/30);
+        const hill = (cx,cz,spread,height) => height*Math.exp(-((x-cx)**2+(depth-cz)**2)/(2*spread**2));
+        const rolling = 7*Math.sin(x/65)*Math.sin(depth/57) + 4*Math.cos(x/43+depth/80);
+        return fade*(rolling + hill(-130,170,65,28) + hill(155,360,70,32) - hill(25,270,60,24) - hill(-170,430,45,14));
+    }
+    for(let row=0;row<=TERRAIN_ROWS;row++) {
+        const heights=[];
+        for(let col=0;col<=TERRAIN_COLUMNS;col++) heights.push(sculptMoonHeight(-MOON_HALF_WIDTH+col*TERRAIN_STEP, MOON_ENTRY-row*TERRAIN_STEP));
+        moonHeights.push(heights);
+    }
+
+    function terrainHeightAt(x,z) {
+        if (z>MOON_ENTRY || z<MOON_FAR || Math.abs(x)>MOON_HALF_WIDTH) return 0;
+        const gx=(x+MOON_HALF_WIDTH)/TERRAIN_STEP, gz=(MOON_ENTRY-z)/TERRAIN_STEP;
+        const col=Math.min(TERRAIN_COLUMNS-1,Math.floor(gx)), row=Math.min(TERRAIN_ROWS-1,Math.floor(gz));
+        const u=gx-col,v=gz-row;
+        const a=moonHeights[row][col], b=moonHeights[row][col+1];
+        const c=moonHeights[row+1][col], d=moonHeights[row+1][col+1];
+        // Match the rendered triangles exactly, including between grid vertices.
+        return u+v<=1 ? a+(b-a)*u+(c-a)*v : d+(c-d)*(1-u)+(b-d)*(1-v);
+    }
+
+    function buildMoonTerrain(material) {
+        const positions=[],uvs=[],indices=[];
+        for(let row=0;row<=TERRAIN_ROWS;row++) for(let col=0;col<=TERRAIN_COLUMNS;col++) {
+            positions.push(-MOON_HALF_WIDTH+col*TERRAIN_STEP,moonHeights[row][col],MOON_ENTRY-row*TERRAIN_STEP);
+            uvs.push(col/TERRAIN_COLUMNS,row/TERRAIN_ROWS);
+        }
+        for(let row=0;row<TERRAIN_ROWS;row++) for(let col=0;col<TERRAIN_COLUMNS;col++) {
+            const a=row*(TERRAIN_COLUMNS+1)+col,b=a+1,c=a+TERRAIN_COLUMNS+1,d=c+1;
+            indices.push(a,b,c,b,d,c);
+        }
+        const geometry=new THREE.BufferGeometry();
+        geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+        geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+        geometry.setIndex(indices); geometry.computeVertexNormals();
+        const ground=new THREE.Mesh(geometry,material);ground.receiveShadow=true;scene.add(ground);
+    }
+
+    function canWalkAt(x, z) {
+        if (rainbowWorld && playerGroup.position.y >= rainbowWorld.height-0.8 && rainbowFootprint(x,z)) return true;
+        if (Math.hypot(x, z) <= WORLD_RADIUS) return true;
+        if (!isSpaceRealmOpen) return false;
+        if (bridgeCheckpoints.some(gate => !gate.userData.cleared && z <= gate.position.z + 1 && z >= MOON_FAR)) return false;
+        const bridge = Math.abs(x) <= 6 && z <= -380 && z >= MOON_ENTRY - 2;
+        const moon = Math.abs(x) <= MOON_HALF_WIDTH - 2 && z <= MOON_ENTRY && z >= MOON_FAR + 2;
+        return bridge || moon;
+    }
+
+    function addScore(points) {
+        score += points*(currentRealm==='rainbow'&&rainbowPowers.bonus?2:1);
+        document.getElementById('score-display').textContent = score;
+        if (score >= 50 && !isSpaceRealmOpen) activateSpaceRealm();
+    } 
+
+    const matGround = new THREE.MeshLambertMaterial({ color: 0x7CB342 });
+    const matPath = new THREE.MeshLambertMaterial({ color: 0xFFF8E1 });
+    const matSpace = new THREE.MeshLambertMaterial({ color: 0x4B0082 }); // Purple space ground
+
+    function createWorld() {
+        // Main World Ground
+        const ground = new THREE.Mesh(new THREE.CylinderGeometry(400, 400, 2, 64), matGround);
+        ground.position.y = -1;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Boundary Ring
+        const edgeGeo = new THREE.TorusGeometry(395, 2, 16, 100, Math.PI * 2 - 0.06);
+        const edgeMat = new THREE.MeshLambertMaterial({ color: 0x388E3C });
+        const edge = new THREE.Mesh(edgeGeo, edgeMat);
+        edge.rotation.x = Math.PI / 2;
+        edge.rotation.z = -Math.PI / 2 + 0.03;
+        scene.add(edge);
+
+        createContinuousPaths();
+        createSpaceGate(); // Replaces Lava Gate
+        createCages();
+        createPredators();
+        
+        // Regular math obstacles
+        for(let i=0; i<15; i++) {
+            let ox = (Math.random()-0.5)*700;
+            let oz = (Math.random()-0.5)*700;
+            if (Math.hypot(ox, oz) < WORLD_RADIUS - 20) {
+                createObstacle(ox, -20 - Math.random()*100, 'math_block', 'מכשול דרך', {score: 5});
+            }
+        }
+    }
+
+    function createContinuousPaths() {
+        function createPath(startX, startZ, endX, endZ, segments) {
+            const pathPoints = [];
+            let curX = startX, curZ = startZ;
+            
+            pathPoints.push(new THREE.Vector3(curX, 0, curZ));
+            dynamicPaths.push({ x: curX, z: curZ, radius: 9 });
+
+            let stepX = (endX - startX) / segments;
+            let stepZ = (endZ - startZ) / segments;
+
+            for(let i=0; i<segments; i++) {
+                curX += stepX + (Math.random() - 0.5) * 80;
+                curZ += stepZ + (Math.random() - 0.5) * 80;
+                pathPoints.push(new THREE.Vector3(curX, 0, curZ));
+                dynamicPaths.push({ x: curX, z: curZ, radius: 9 });
+            }
+            pathPoints.push(new THREE.Vector3(endX, 0, endZ)); 
+            dynamicPaths.push({ x: endX, z: endZ, radius: 9 });
+
+            const curve = new THREE.CatmullRomCurve3(pathPoints);
+            const tubeGeo = new THREE.TubeGeometry(curve, 100, 6, 8, false);
+            const tubeMesh = new THREE.Mesh(tubeGeo, matPath);
+            
+            tubeMesh.scale.y = 0.05; 
+            tubeMesh.position.y = 0.05;
+            tubeMesh.receiveShadow = true;
+            scene.add(tubeMesh);
+        }
+
+        // Main paths
+        createPath(0, 10, 0, -200, 15);
+        for(let p = 0; p < 45; p++) {
+            let startX = (Math.random() - 0.5) * 750;
+            let startZ = (Math.random() - 0.5) * 750;
+            let endX = (Math.random() - 0.5) * 750;
+            let endZ = (Math.random() - 0.5) * 750;
+            createPath(startX, startZ, endX, endZ, 12);
+        }
+    }
+
+    function createCages() {
+        for (let i = 0; i < totalFriends; i++) {
+            let cx = (Math.random() - 0.5) * 600;
+            let cz = (Math.random() - 0.5) * 600;
+            
+            if (Math.hypot(cx, cz) < WORLD_RADIUS - 40 && Math.hypot(cx, cz) > 50) {
+                 const gateData = createObstacle(cx, cz + 5, 'npc_gate', `חבר כלוא ${i+1}`, {score: 15});
+                 const npc = createBlueNPC(true); 
+                 npc.position.set(cx, 0, cz);
+                 scene.add(npc);
+                 npcList.push({ mesh: npc, gate: gateData, isFree: false, origin: {x: cx, z: cz} });
+            }
+        }
+    }
+
+    function resetRealmPowers(realm) {
+        currentRealm = realm;
+        for(const key of rainbowPowerKeys)rainbowPowers[key]=false;
+        for(const key of Object.keys(rainbowTimers))rainbowTimers[key]=0;
+        monsterRig.visible=true;bodyMat.transparent=false;bodyMat.opacity=1;refreshRainbowPowers();
+        for (const key of Object.keys(powerups)) powerups[key] = false;
+        for (const id of ['power-jump','power-shield','power-slow','power-god']) document.getElementById(id).classList.remove('active');
+        friendsRescued = 0;
+        totalFriends = npcList.filter(npc => (npc.realm || 'earth') === realm && !npc.isFree).length;
+        currentMistakes = 0;
+        monsterRig.scale.set(1,1,1);
+        playerVelocityY = Math.min(playerVelocityY,0.48);
+        document.getElementById('space-warning').textContent = realm === 'rainbow' ? 'ברוכים הבאים לעולם הקשת! פתרו שערי חשבון והצילו חברים 🌈' : realm === 'moon'
+            ? 'הגעתם לירח! הכוחות התאפסו — הצילו חברים כדי לקבל כוחות חדשים 🌙'
+            : 'חזרתם לעולם הרגיל. הכוחות התאפסו 🌍';
+    }
+
+    function createMoonFriends() {
+        const locations=[[-70,-975],[85,-1020],[-195,-1070],[205,-1130],[-85,-1200],[110,-1270],[-210,-1330],[210,-1375]];
+        locations.forEach(([x,z],i) => {
+            const gate=createObstacle(x,z,'npc_gate',`חבר ירח כלוא ${i+1}`,{score:15},terrainHeightAt(x,z));
+            const npc=createBlueNPC(true);
+            npc.position.set(x,terrainHeightAt(x,z),z);
+            scene.add(npc);
+            npcList.push({mesh:npc,gate,isFree:false,realm:'moon',origin:{x,z}});
+        });
+    }
+
+    function createTreasureIsland() {
+        const x=25,z=-960,radius=6;
+        let highest=terrainHeightAt(x,z);
+        // Stay beyond normal jump reach even from nearby elevated ground.
+        for(let r=0;r<=30;r+=3) for(let i=0;i<48;i++) {
+            const angle=i*Math.PI/24;
+            highest=Math.max(highest,terrainHeightAt(x+Math.cos(angle)*r,z+Math.sin(angle)*r));
+        }
+        const top=highest+12;
+        const island=new THREE.Group();island.position.set(x,top,z);
+        const stone=new THREE.MeshLambertMaterial({color:0x736a9a,flatShading:true});
+        const rock=new THREE.Mesh(new THREE.CylinderGeometry(radius,1,3,9),stone);
+        rock.position.y=-1.65;island.add(rock);
+        const surface=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,.3,32),
+            new THREE.MeshLambertMaterial({color:0xa9a1c8}));
+        surface.position.y=-.15;surface.receiveShadow=true;island.add(surface);
+        const gold=new THREE.MeshLambertMaterial({color:0xffc83d,emissive:0x5a3000});
+        const wood=new THREE.MeshLambertMaterial({color:0x754420});
+        const chest=new THREE.Mesh(new THREE.BoxGeometry(2.5,1.3,1.7),wood);
+        chest.position.y=.65;island.add(chest);
+        for(const x of [-.85,.85]) {
+            const band=new THREE.Mesh(new THREE.BoxGeometry(.18,1.36,1.76),gold);
+            band.position.set(x,.68,0);island.add(band);
+        }
+        const lid=new THREE.Group();lid.position.set(0,1.3,-.85);
+        const lidMesh=new THREE.Mesh(new THREE.BoxGeometry(2.65,.35,1.85),gold);
+        lidMesh.position.set(0,.1,.85);lid.add(lidMesh);island.add(lid);
+        const coins=[];
+        for(let i=0;i<7;i++) {
+            const coin=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.1,16),gold);
+            coin.rotation.x=Math.PI/2;
+            coin.position.set((i%3-1)*.55,1.6+Math.floor(i/3)*.25,(i%2-.5)*.45);
+            island.add(coin);coins.push(coin);
+        }
+        scene.add(island);
+        moonIsland={x,z,radius,top,mesh:island,lid,coins,collected:false,burst:0};
+        moonPlatforms.push(moonIsland);
+        // Four higher stepping stones: 16 units up and 14 sideways per jump.
+        // Moon super-jump reaches about 29 units; an ordinary jump only reaches 7.4.
+        const steps=[[14,0],[14,-14],[0,-14],[-14,-14]];
+        const colors=[0x83bfd0,0x93a7df,0xb69bdf,0xe3c57c];
+        steps.forEach(([offsetX,offsetZ],index)=>{
+            const platform=new THREE.Group();
+            const px=x+offsetX,pz=z+offsetZ,py=top+16*(index+1);
+            platform.position.set(px,py,pz);
+            const base=new THREE.Mesh(new THREE.CylinderGeometry(radius,1,3,9),stone);
+            base.position.y=-1.65;platform.add(base);
+            const cap=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,.3,32),
+                new THREE.MeshLambertMaterial({color:colors[index]}));
+            cap.position.y=-.15;cap.receiveShadow=true;platform.add(cap);
+            const rim=new THREE.Mesh(new THREE.TorusGeometry(radius-.15,.12,8,48),
+                new THREE.MeshBasicMaterial({color:colors[index]}));
+            rim.rotation.x=Math.PI/2;rim.position.y=.06;platform.add(rim);
+            scene.add(platform);
+            moonPlatforms.push({x:px,z:pz,radius,top:py,mesh:platform});
+        });
+        createRainbowWorld(moonPlatforms[3]);
+    }
+
+    function supportingMoonPlatform(x,z,feetY) {
+        let support=null;
+        for(const platform of moonPlatforms) {
+            if (Math.hypot(x-platform.x,z-platform.z)<=platform.radius-.6 && feetY>=platform.top-.03 && (!support || platform.top>support.top)) support=platform;
+        }
+        return support;
+    }
+
+    function playerSurfaceHeight(x,z,feetY) {
+        const support=supportingMoonPlatform(x,z,feetY);
+        let height=support ? support.top : terrainHeightAt(x,z);
+        const rainbowHeight=rainbowSurfaceAt(x,z);
+        if (rainbowHeight!==null && feetY>=rainbowHeight-.8) height=Math.max(height,rainbowHeight);
+        return height;
+    }
+
+    function updateTreasureIsland(delta,time) {
+        if(!moonIsland) return;
+        const island=moonIsland;
+        if(!island.collected && !isJumping && Math.abs(playerGroup.position.y-island.top)<.05 && Math.hypot(playerGroup.position.x-island.x,playerGroup.position.z-island.z)<2.5) {
+            island.collected=true;island.burst=1.5;
+            addScore(50);playPowerupSound();
+            document.getElementById('space-warning').textContent='מצאתם את תיבת הזהב! קיבלתם 50 נקודות 🪙';
+        }
+        island.coins.forEach((coin,i)=>{
+            coin.rotation.z+=delta*2;
+            if(!island.collected) coin.position.y=1.8+Math.floor(i/3)*.25+Math.sin(time*3+i)*.15;
+            else {coin.position.y+=delta*3;coin.visible=island.burst>0;}
+        });
+        if(island.collected) {
+            island.lid.rotation.x=Math.max(-1.9,island.lid.rotation.x-delta*3);
+            island.burst=Math.max(0,island.burst-delta);
+        }
+    }
+
+    function rainbowPolar(x,z) {
+        if(!rainbowWorld) return null;
+        const dx=x-rainbowWorld.cx,dz=rainbowWorld.z-z;
+        return {radius:Math.hypot(dx,dz),angle:Math.atan2(dz,dx)};
+    }
+
+    function inRainbowArena(x,z) {
+        const p=rainbowPolar(x,z);
+        return p && p.radius>=212 && p.radius<=348 && p.angle>=0 && p.angle<=Math.PI;
+    }
+
+    function onRainbowRoad(x,z) {
+        return rainbowWorld && x>=rainbowWorld.startX && x<=rainbowWorld.entryX && Math.abs(z-rainbowWorld.z)<=7;
+    }
+
+    function rainbowFootprint(x,z) {
+        if(!rainbowWorld) return false;
+        return inRainbowArena(x,z) || onRainbowRoad(x,z) || Math.hypot(x-rainbowWorld.entryX,z-rainbowWorld.z)<=12;
+    }
+
+    function rainbowSurfaceAt(x,z) {
+        if(!rainbowWorld) return null;
+        if(onRainbowRoad(x,z)) {
+            const t=(x-rainbowWorld.startX)/(rainbowWorld.entryX-rainbowWorld.startX);
+            // Interpolate the same segmented arch used by the rendered bridge.
+            const sample=Math.min(119,Math.floor(t*120)),f=t*120-sample;
+            return rainbowWorld.height+55*((1-f)*Math.sin(Math.PI*sample/120)+f*Math.sin(Math.PI*(sample+1)/120));
+        }
+        return rainbowFootprint(x,z) ? rainbowWorld.height : null;
+    }
+
+    function rainbowGateAhead(x,z,y) {
+        if(!inRainbowArena(x,z) || y<rainbowWorld.height-.8) return null;
+        const p=rainbowPolar(x,z);
+        // Full-width gates cannot be bypassed by changing color lanes or jumping.
+        return rainbowGates.find(g=>!g.userData.cleared && p.angle<=g.userData.angle+6/p.radius) || null;
+    }
+
+    function rainbowPoint(angle,radius=280) {
+        return {x:rainbowWorld.cx+radius*Math.cos(angle),z:rainbowWorld.z-radius*Math.sin(angle)};
+    }
+
+    function makeRainbowChallenge(kind,grade) {
+        const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+        let answer,text,a,b;
+        if(kind==='sequence') {
+            a=rand(2,grade*8+4);b=rand(2,grade*3+3);answer=a+3*b;
+            text=`${a}, ${a+b}, ${a+2*b}, ?`;
+        } else if(kind==='missing') {
+            a=rand(2,grade===1?15:grade*5+3);b=rand(2,grade===1?9:12);answer=b;
+            text=grade===1 ? `${a} + ? = ${a+b}` : `${a} × ? = ${a*b}`;
+        } else if(kind==='division' && grade>1) {
+            a=rand(2,grade*3+3);b=rand(2,grade*2+3);answer=a;
+            text=`${a*b} ÷ ${b} = ?`;
+        } else {
+            a=rand(3,grade===1?18:grade*5+5);b=rand(2,grade===1?12:9);
+            answer=grade===1?a+b:a*b;text=grade===1?`${a} + ${b} = ?`:`${a} × ${b} = ?`;
+        }
+        const options=[answer];
+        while(options.length<4){const v=Math.max(0,answer+rand(-10,12));if(!options.includes(v))options.push(v);}
+        for(let i=3;i>0;i--){const j=rand(0,i);[options[i],options[j]]=[options[j],options[i]];}
+        return {answer,text,options};
+    }
+
+    function createRainbowWorld(source) {
+        if(rainbowWorld)return;
+        rainbowWorld={startX:source.x,entryX:720,cx:1000,z:source.z,height:source.top,complete:false};
+        const H=source.top;
+        function strip(points,color) {
+            const positions=[],indices=[];
+            points.forEach(pair=>pair.forEach(v=>positions.push(...v)));
+            for(let i=0;i<points.length-1;i++){const a=i*2;indices.push(a,a+2,a+1,a+1,a+2,a+3);}
+            const geometry=new THREE.BufferGeometry();
+            geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+            const mesh=new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide}));mesh.receiveShadow=true;scene.add(mesh);
+        }
+        for(let band=0;band<7;band++) {
+            const road=[];
+            for(let i=0;i<=120;i++) {
+                const t=i/120,x=source.x+(720-source.x)*t,y=H+55*Math.sin(Math.PI*t);
+                road.push([[x,y,source.z-8+band*16/7],[x,y,source.z-8+(band+1)*16/7]]);
+            }
+            strip(road,RAINBOW_COLORS[band]);
+            const world=[];
+            for(let i=0;i<=120;i++) {
+                const angle=i/120*Math.PI;
+                world.push([210+band*20,230+band*20].map(r=>[1000+r*Math.cos(angle),H,source.z-r*Math.sin(angle)]));
+            }
+            strip(world,RAINBOW_COLORS[band]);
+        }
+        const white=new THREE.MeshLambertMaterial({color:0xf7fcff});
+        // Open entrance arch on the fourth platform: no lock or score requirement.
+        const arch=new THREE.Mesh(new THREE.TorusGeometry(5,.45,8,32,Math.PI),new THREE.MeshLambertMaterial({color:0xffdd69,emissive:0x4c3100}));
+        arch.rotation.y=Math.PI/2;arch.position.set(source.x+5,H,source.z);scene.add(arch);
+        const landing=new THREE.Mesh(new THREE.CylinderGeometry(13,13,1,32),white);
+        landing.position.set(720,H-.5,source.z);scene.add(landing);
+        function cloud(x,y,z,size) {
+            for(let i=0;i<3;i++) {
+                const puff=new THREE.Mesh(new THREE.SphereGeometry(size,10,6),white);
+                puff.scale.set(1.5,.55,1);puff.position.set(x+(i-1)*size,y+(i===1?size*.3:0),z);scene.add(puff);
+            }
+        }
+        for(let i=0;i<=22;i++) {
+            const angle=i/22*Math.PI;
+            for(const r of [201,359]){const p=rainbowPoint(angle,r);cloud(p.x,H-4,p.z,5);}
+        }
+        for(let i=1;i<12;i++) {
+            const t=i/12;cloud(source.x+(720-source.x)*t,H+55*Math.sin(t*Math.PI)-5,source.z+(i%2?14:-14),4);
+        }
+        const kinds=['missing','sequence','division'];
+        const titles=['שער המספר החסר','שער סדרת הצבעים','שער טיפות החשבון'];
+        [2.6,1.75,.9].forEach((angle,i)=>{
+            const p=rainbowPoint(angle);
+            const gate=createObstacle(p.x,p.z,'rainbow_gate',titles[i],{score:20},H);
+            Object.assign(gate.userData,{realm:'rainbow',kind:kinds[i],angle});
+            gate.rotation.y=angle;
+            const curtain=new THREE.Mesh(new THREE.BoxGeometry(140,7,.6),new THREE.MeshLambertMaterial({color:RAINBOW_COLORS[i*2],transparent:true,opacity:.55}));
+            curtain.position.y=3.5;gate.add(curtain);rainbowGates.push(gate);
+        });
+        // Eight cloud friends, distributed along the whole crescent.
+        for(let i=0;i<8;i++) {
+            const angle=2.95-i*.36,p=rainbowPoint(angle,i%2?315:247);
+            const gate=createObstacle(p.x,p.z,'npc_gate',`חבר ענן ${i+1} — הצילו בעזרת חשבון`,{score:15},H);
+            Object.assign(gate.userData,{realm:'rainbow',kind:kinds[i%3],powerIndex:i});
+            const npc=createBlueNPC(true);npc.position.set(p.x,H,p.z);scene.add(npc);
+            npcList.push({mesh:npc,gate,isFree:false,realm:'rainbow',origin:{x:p.x,z:p.z}});
+        }
+        [2.82,2.15,1.35,.25].forEach((angle,i)=>{
+            const p=rainbowPoint(angle,280);
+            const chest=createObstacle(p.x,p.z,'rainbow_chest',i===3?'קדרת הזהב שבקצה הקשת':'תיבת מטבעות הקשת',{score:i===3?50:15},H);
+            Object.assign(chest.userData,{realm:'rainbow',kind:i===3?'division':'missing',final:i===3});
+            const pot=new THREE.Mesh(new THREE.SphereGeometry(i===3?3:2,12,8),new THREE.MeshLambertMaterial({color:i===3?0x6f48a3:0xc27c33}));
+            pot.scale.y=.7;pot.position.y=1.6;chest.add(pot);
+            const gold=new THREE.Mesh(new THREE.CylinderGeometry(i===3?2.5:1.6,i===3?2.5:1.6,.3,16),new THREE.MeshLambertMaterial({color:0xffde56,emissive:0x6b3f00}));
+            gold.position.y=2.7;chest.add(gold);
+        });
+        createStormClouds();
+        for(let i=0;i<20;i++) {
+            const p=rainbowPoint(.12+i*.15,i%2?333:227);
+            const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(2.5),new THREE.MeshLambertMaterial({color:RAINBOW_COLORS[i%7],emissive:0x182030}));
+            crystal.position.set(p.x,H+4,p.z);scene.add(crystal);rainbowDecorations.push(crystal);
+        }
+    }
+
+    function createStormClouds() {
+        for(let i=0;i<10;i++) {
+            const group=new THREE.Group();
+            const gray=new THREE.MeshLambertMaterial({color:0x76809f});
+            for(let puff=0;puff<5;puff++) {
+                const mesh=new THREE.Mesh(new THREE.SphereGeometry(puff===2?2.7:2,12,8),gray);
+                mesh.position.set((puff-2)*1.2,3.2+(puff%2)*.6,Math.sin(puff)*.65);mesh.scale.y=.8;group.add(mesh);
+            }
+            for(const x of [-.85,.85]) {
+                const eye=new THREE.Mesh(new THREE.SphereGeometry(.3,8,6),new THREE.MeshBasicMaterial({color:0xfff4a4}));
+                eye.position.set(x,3.7,-2);group.add(eye);
+                const pupil=new THREE.Mesh(new THREE.SphereGeometry(.14,8,6),new THREE.MeshBasicMaterial({color:0x24233a}));
+                pupil.position.set(x,3.7,-2.25);group.add(pupil);
+            }
+            const bolt=new THREE.Mesh(new THREE.ConeGeometry(.55,2,3),new THREE.MeshBasicMaterial({color:0xffdf55}));
+            bolt.rotation.z=Math.PI;bolt.position.y=1.1;group.add(bolt);
+            const p=rainbowPoint(2.77-i*.27,i%2?325:265);
+            group.position.set(p.x,rainbowWorld.height,p.z);scene.add(group);
+            predators.push({mesh:group,active:true,isCloud:true,realm:'rainbow',phase:i});
+        }
+    }
+
+    function rainbowNpcHeight(npc) {
+        return npc.realm==='rainbow' ? rainbowWorld.height : terrainHeightAt(npc.mesh.position.x,npc.mesh.position.z);
+    }
+
+    function createAsteroid(x,z,index) {
+        const group=new THREE.Group();
+        // Original enemy radius was 1.2; the asteroid radius is exactly five times larger.
+        const rock=new THREE.Mesh(new THREE.IcosahedronGeometry(6,1),
+            new THREE.MeshLambertMaterial({color:0x675346,emissive:0x231008,flatShading:true}));
+        rock.position.y=6;rock.castShadow=true;group.add(rock);
+        const trail=[];
+        for(let i=0;i<12;i++) {
+            const flame=new THREE.Mesh(new THREE.SphereGeometry(1,8,6),
+                new THREE.MeshBasicMaterial({color:i<3?0xffec88:i<7?0xff861c:0xe83910,transparent:true,opacity:1-i/15,depthWrite:false,blending:THREE.AdditiveBlending}));
+            flame.position.set(0,6,5+i*1.5);
+            group.add(flame);trail.push(flame);
+        }
+        group.position.set(x,terrainHeightAt(x,z),z);scene.add(group);
+        predators.push({mesh:group,rock,trail,phase:index,active:true,isAlien:true,isAsteroid:true,collisionRadius:7.2});
+    }
+
+    function createBlueNPC(hasPower) {
+        const group = new THREE.Group();
+        const color = hasPower ? 0xFFD700 : 0x00BFFF; 
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshLambertMaterial({color: color}));
+        body.position.y = 0.8;
+        group.add(body);
+        return group;
+    }
+
+    function createSpaceGate() {
+        spaceWall = new THREE.Mesh(new THREE.BoxGeometry(16, 12, 4),
+            new THREE.MeshLambertMaterial({color: 0xFFD700}));
+        spaceWall.position.set(0, 6, -395);
+        scene.add(spaceWall);
+        // Gate pillars stay visible after the barrier lowers.
+        for (const x of [-10, 10]) {
+            const pillar = new THREE.Mesh(new THREE.BoxGeometry(3, 15, 5), matSpace);
+            pillar.position.set(x, 7.5, -395);
+            scene.add(pillar);
+        }
+    }
+
+    function createPredators() {
+        for(let i=0; i<18; i++) {
+            const predGroup = new THREE.Group();
+            const body = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2), new THREE.MeshLambertMaterial({color: 0xE53935}));
+            body.position.y = 1.2;
+            
+            const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const eyeMat = new THREE.MeshBasicMaterial({color: 0xFFFF00});
+            const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.5, 1.8, -0.9);
+            const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.5, 1.8, -0.9);
+            
+            predGroup.add(body, rightEye, leftEye);
+            
+            let px = (Math.random() - 0.5) * 600;
+            let pz = (Math.random() - 0.5) * 600;
+            
+            if (Math.hypot(px, pz) < 50) { px += 100; pz -= 100; }
+            predGroup.position.set(px, 0, pz);
+            scene.add(predGroup);
+            predators.push({ mesh: predGroup, active: true });
+        }
+    }
+
+    function createObstacle(x, z, type, name, config = null, y = 0) {
+        const obsGroup = new THREE.Group();
+        const indicator = new THREE.Mesh(new THREE.OctahedronGeometry(1.5), new THREE.MeshLambertMaterial({color: 0xFFCA28}));
+        indicator.position.y = type === 'npc_gate' ? 7 : 5;
+        obsGroup.add(indicator);
+        
+        if (type === 'space_portal') {
+            const barrier = new THREE.Mesh(new THREE.PlaneGeometry(16, 8), new THREE.MeshBasicMaterial({color: 0x8A2BE2, transparent: true, opacity: 0.6, side: THREE.DoubleSide}));
+            barrier.position.y = 4;
+            obsGroup.add(barrier);
+        } else if (type === 'npc_gate') {
+            const barrier = new THREE.Group();
+            const cageMat = new THREE.MeshLambertMaterial({ color: 0x555555 }); 
+            const ringGeo = new THREE.TorusGeometry(3, 0.2, 8, 24);
+            const bottomRing = new THREE.Mesh(ringGeo, cageMat);
+            bottomRing.rotation.x = Math.PI / 2; bottomRing.position.y = 0.2;
+            const topRing = new THREE.Mesh(ringGeo, cageMat);
+            topRing.rotation.x = Math.PI / 2; topRing.position.y = 5;
+            barrier.add(bottomRing, topRing);
+            const barGeo = new THREE.CylinderGeometry(0.15, 0.15, 5, 8);
+            for(let i=0; i<8; i++) {
+                let angle = (i / 8) * Math.PI * 2;
+                let bar = new THREE.Mesh(barGeo, cageMat);
+                bar.position.set(Math.cos(angle)*3, 2.6, Math.sin(angle)*3);
+                barrier.add(bar);
+            }
+            obsGroup.add(barrier);
+        }
+
+        obsGroup.userData = { isObstacle: true, type: type, name: name, indicator: indicator, cleared: false, config: config };
+        obsGroup.position.set(x, y, z);
+        scene.add(obsGroup);
+        interactables.push(obsGroup);
+        return obsGroup;
+    }
+
+    const playerGroup = new THREE.Group();
+    const monsterRig = new THREE.Group();
+    playerGroup.add(monsterRig);
+    
+    const bodyGeo = new THREE.SphereGeometry(1.2, 32, 32);
+    const bodyMat = new THREE.MeshLambertMaterial({color: 0x9C27B0});
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 1.2;
+    monsterRig.add(body);
+    
+    const eyeGeo = new THREE.SphereGeometry(0.3, 16, 16);
+    const eyeMat = new THREE.MeshBasicMaterial({color: 0xffffff});
+    const pupilGeo = new THREE.SphereGeometry(0.15, 16, 16);
+    const pupilMat = new THREE.MeshBasicMaterial({color: 0x000000});
+    
+    const rightEye = new THREE.Mesh(eyeGeo, eyeMat); rightEye.position.set(0.5, 1.8, -0.9);
+    const rightPupil = new THREE.Mesh(pupilGeo, pupilMat); rightPupil.position.set(0.5, 1.8, -1.15);
+    const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.5, 1.8, -0.9);
+    const leftPupil = new THREE.Mesh(pupilGeo, pupilMat); leftPupil.position.set(-0.5, 1.8, -1.15);
+    
+    monsterRig.add(rightEye, rightPupil, leftEye, leftPupil);
+    playerGroup.position.set(0, 0, 0); 
+    scene.add(playerGroup);
+
+    const questArrow = new THREE.Group();
+    const arrowMat = new THREE.MeshLambertMaterial({color: 0xFF3333, emissive: 0x550000});
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2, 16), arrowMat);
+    cone.position.set(0, 0, -1.5);
+    cone.rotation.x = -Math.PI / 2;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2, 16), arrowMat);
+    stem.position.set(0, 0, 0);
+    stem.rotation.x = -Math.PI / 2;
+    questArrow.add(cone, stem);
+    questArrow.visible = false;
+    scene.add(questArrow);
+
+    let playerVelocityY = 0;
+    let isJumping = false;
+    let groundHeight = 0;
+
+    let movementSpeedMultiplier = 1;
+    let moonShortcut = '';
+    let moonShortcutTime = 0;
+    function openMoonShortcut() {
+        activateSpaceRealm();
+        spaceWall.position.y = -7;
+        for (const gate of bridgeCheckpoints) {
+            gate.userData.cleared = true;
+            gate.children.forEach(child => child.visible = false);
+            gate.userData.deck.visible = true;
+        }
+        document.getElementById('space-warning').textContent = 'קיצור דרך הופעל — כל השערים לירח פתוחים! 🌙';
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if(gameState !== 'PLAYING') { moonShortcut = ''; return; }
+        if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const now = Date.now();
+            if (now - moonShortcutTime > 2000) moonShortcut = '';
+            const letter = e.code === 'KeyA' ? 'a' : e.code === 'KeyB' ? 'b' : e.code === 'KeyU' ? 'u' : '';
+            moonShortcut = letter ? (moonShortcut + letter).slice(-5) : e.code === 'Minus' ? moonShortcut : '';
+            moonShortcutTime = now;
+            if (moonShortcut.endsWith('aba')) {
+                moonShortcut = '';
+                openMoonShortcut();
+            } else if (moonShortcut === 'abubu') {
+                moonShortcut = '';
+                movementSpeedMultiplier = 5;
+                document.getElementById('space-warning').classList.remove('hidden');
+                document.getElementById('space-warning').textContent = 'מהירות תנועה ×5 הופעלה! ⚡';
+            }
+        }
+        if(e.code === 'ArrowLeft') keys.left = true;
+        if(e.code === 'ArrowRight') keys.right = true;
+        if(e.code === 'ArrowUp') keys.up = true;
+        if(e.code === 'ArrowDown') keys.down = true;
+        if(e.code === 'Space') jump();
+        if(!e.repeat){const powerKey={ShiftLeft:'dash',ShiftRight:'dash',KeyR:'gust',KeyC:'cloak',KeyQ:'sun'}[e.code];if(powerKey)useRainbowPower(powerKey);}
+    });
+    window.addEventListener('keyup', (e) => {
+        if(e.code === 'ArrowLeft') keys.left = false;
+        if(e.code === 'ArrowRight') keys.right = false;
+        if(e.code === 'ArrowUp') keys.up = false;
+        if(e.code === 'ArrowDown') keys.down = false;
+    });
+
+    const addTouchControl = (id, key) => {
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    };
+    addTouchControl('btn-left', 'left'); addTouchControl('btn-right', 'right'); addTouchControl('btn-up', 'up'); addTouchControl('btn-down', 'down');
+    document.getElementById('btn-action').addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
+
+    window.startGame = async function(grade) {
+        selectedGrade = grade;
+        await Tone.start();
+        document.getElementById('start-modal').classList.remove('active');
+        gameState = 'PLAYING';
+    };
+    
+    window.continueFromPowerup = function() {
+        document.getElementById('powerup-modal').classList.remove('active');
+        gameState = 'PLAYING';
+    };
+
+    function jump() {
+        if (!isJumping && gameState === 'PLAYING') {
+            const moon = playerGroup.position.z <= MOON_ENTRY && currentRealm!=='rainbow';
+            playerVelocityY = currentRealm==='rainbow' ? (powerups.superJump?1.1:.65) : moon ? (powerups.superJump ? 0.95 : 0.48) : (powerups.superJump ? 6.0 : 0.6);
+            isJumping = true;
+            playJumpSound();
+        }
+    }
+
+    function makeBridgeChallenge(grade) {
+        // Use the next existing grade band; add a fifth band for grade-four players.
+        const nextLevel = Math.min(5, grade + 1);
+        const rand = (lo, hi) => lo + Math.floor(Math.random()*(hi-lo+1));
+        let a, b;
+        if (nextLevel === 2) { a=rand(2,5); b=rand(2,5); }
+        else if (nextLevel === 3) { a=rand(2,9); b=rand(2,9); }
+        else if (nextLevel === 4) { a=rand(2,9); b=rand(10,20); }
+        else { a=rand(11,20); b=rand(11,20); }
+        const answer=a*b;
+        const options=[answer, answer+a, answer+b+1, Math.max(0,answer-a)];
+        const unique=[...new Set(options)];
+        while(unique.length<4) {
+            const candidate=answer+rand(1,20);
+            if (!unique.includes(candidate)) unique.push(candidate);
+        }
+        for (let i=unique.length-1;i>0;i--) {
+            const j=rand(0,i); [unique[i],unique[j]]=[unique[j],unique[i]];
+        }
+        return {answer, text:`${a} × ${b} = ?`, options:unique, level:nextLevel};
+    }
+
+    function triggerChallenge(obstacle) {
+        if (gameState !== 'PLAYING') return; 
+        
+        gameState = 'CHALLENGE';
+        activeObstacle = obstacle;
+        currentMistakes = 0; 
+        
+        let num1 = Math.floor(Math.random() * 5) + 2;
+        let num2 = Math.floor(Math.random() * 5) + 1;
+        currentChallenge = { 
+            answer: num1 + num2, 
+            text: `${num1} + ${num2} = ?`, 
+            options: [num1+num2, num1+num2+1, Math.abs(num1-num2), num1+num2+2].sort(() => Math.random() - 0.5) 
+        };
+        
+        if (obstacle.userData.type === 'bridge_gate') currentChallenge = makeBridgeChallenge(selectedGrade);
+        if (obstacle.userData.realm === 'rainbow') currentChallenge = makeRainbowChallenge(obstacle.userData.kind,selectedGrade);
+        document.getElementById('predator-timer').classList.add('hidden');
+        document.getElementById('challenge-story').textContent = obstacle.userData.name;
+        document.getElementById('math-problem').innerHTML = `<span dir="ltr">${currentChallenge.text}</span>`;
+        document.getElementById('challenge-hint').textContent = obstacle.userData.realm==='rainbow' ? 'פתרו כדי להתקדם בקשת. אין הגבלת זמן ואפשר לנסות שוב.' : obstacle.userData.type === 'bridge_gate' ? 'פתרו כדי לפתוח את השער. אפשר לנסות שוב ללא הגבלת זמן.' : '';
+        
+        const container = document.getElementById('answers-container');
+        container.innerHTML = '';
+        currentChallenge.options.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = 'answer-btn'; btn.textContent = opt;
+            btn.onclick = () => checkAnswer(opt, btn);
+            container.appendChild(btn);
+        });
+        applyRainbowHint();
+        document.getElementById('challenge-modal').classList.add('active');
+    }
+
+    function playerHitsPredator(pred) {
+        const playerRadius = 1.2 * monsterRig.scale.x;
+        const enemyRadius = (pred.isCloud ? 3.2 : pred.isAsteroid ? 6 : 1.2) * pred.mesh.scale.x;
+        const playerCenterY = playerGroup.position.y + playerRadius;
+        const enemyCenterY = pred.mesh.position.y + enemyRadius;
+        const dx = playerGroup.position.x - pred.mesh.position.x;
+        const dz = playerGroup.position.z - pred.mesh.position.z;
+        const dy = playerCenterY - enemyCenterY;
+        return dx*dx + dy*dy + dz*dz < (playerRadius + enemyRadius)**2;
+    }
+
+    function triggerPredatorChallenge(predatorObj) {
+        if (gameState !== 'PLAYING' || (predatorObj.isCloud && rainbowTimers.cloakActive>0)) return;
+        if (powerups.godMode) {
+            playPopSound();
+            explodingPredator = predatorObj.mesh;
+            predatorObj.active = false;
+            gameState = 'PREDATOR_DEATH';
+            activeObstacle = predatorObj;
+            return;
+        }
+        
+        gameState = 'PREDATOR_CHALLENGE';
+        activeObstacle = predatorObj;
+        currentMistakes = 0; 
+        
+        let num1, num2, answer, text;
+
+        if (selectedGrade === 1) {
+            if (Math.random() < 0.5) {
+                // Class A: Addition up to 15
+                answer = Math.floor(Math.random() * 11) + 5; 
+                num1 = Math.floor(Math.random() * (answer - 1)) + 1;
+                num2 = answer - num1;
+                text = `${num1} + ${num2} = ?`;
+            } else {
+                // Class A: Subtraction single digit
+                num2 = Math.floor(Math.random() * 9) + 1; 
+                answer = Math.floor(Math.random() * 9) + 1; 
+                num1 = answer + num2; 
+                text = `${num1} - ${num2} = ?`;
+            }
+        } else if (selectedGrade === 2) {
+            // Class B: Multi up to 5x5
+            num1 = Math.floor(Math.random() * 4) + 2; 
+            num2 = Math.floor(Math.random() * 4) + 2; 
+            answer = num1 * num2;
+            text = `${num1} × ${num2} = ?`;
+        } else if (selectedGrade === 3) {
+            // Class C: Multi up to 9x9
+            num1 = Math.floor(Math.random() * 8) + 2; 
+            num2 = Math.floor(Math.random() * 8) + 2; 
+            answer = num1 * num2;
+            text = `${num1} × ${num2} = ?`;
+        } else {
+            // Class D: 1-digit x 2-digit (10-20)
+            num1 = Math.floor(Math.random() * 8) + 2; 
+            num2 = Math.floor(Math.random() * 11) + 10; 
+            if (Math.random() > 0.5) { let t = num1; num1 = num2; num2 = t; }
+            answer = num1 * num2;
+            text = `${num1} × ${num2} = ?`;
+        }
+        
+        // Smart Distractors
+        let opt1 = answer + (Math.floor(Math.random() * 3) + 1);
+        let opt2 = answer - (Math.floor(Math.random() * 3) + 1);
+        if (opt2 < 0) opt2 = answer + 4; 
+        let opt3 = answer + (Math.floor(Math.random() * 5) + 5);
+        
+        // Ensure unique options
+        let optionsArray = Array.from(new Set([answer, opt1, opt2, opt3]));
+        while(optionsArray.length < 4) {
+            optionsArray.push(answer + Math.floor(Math.random()*10) + 1);
+            optionsArray = Array.from(new Set(optionsArray));
+        }
+        
+        currentChallenge = { 
+            answer: answer, 
+            text: text, 
+            options: optionsArray.sort(() => Math.random() - 0.5) 
+        };
+        
+        document.getElementById('challenge-story').textContent = predatorObj.isCloud ? 'ענן סערה תפס אותך! פתרו כדי לפזר אותו!' : predatorObj.isAsteroid ? 'אסטרואיד מתקרב! פתרו כדי לנפץ אותו!' : 'אוי לא! טורף תפס אותך!';
+        document.getElementById('math-problem').innerHTML = `<span dir="ltr">${currentChallenge.text}</span>`;
+        
+        const container = document.getElementById('answers-container');
+        container.innerHTML = '';
+        currentChallenge.options.forEach(opt => {
+            let btn = document.createElement('button');
+            btn.className = 'answer-btn'; btn.textContent = opt;
+            btn.onclick = () => checkAnswer(opt, btn);
+            container.appendChild(btn);
+        });
+        
+        document.getElementById('predator-timer').classList.remove('hidden');
+        predatorTimeLeft = currentRealm==='rainbow'&&rainbowPowers.clock ? 45 : 30;
+        document.getElementById('predator-timer').textContent = predatorTimeLeft;
+        document.getElementById('challenge-hint').textContent = '';
+        
+        predatorInterval = setInterval(() => {
+            predatorTimeLeft--;
+            document.getElementById('predator-timer').textContent = predatorTimeLeft;
+            if (predatorTimeLeft <= 0) {
+                clearInterval(predatorInterval);
+                initiatePlayerDeath(); 
+            }
+        }, 1000);
+        
+        applyRainbowHint();
+        document.getElementById('challenge-modal').classList.add('active');
+    }
+
+    function checkAnswer(selected, btn) {
+        if (btn.disabled) return;
+        if (selected === currentChallenge.answer) {
+            document.querySelectorAll('.answer-btn').forEach(button => button.disabled = true);
+            btn.classList.add('correct');
+            playSuccessSound();
+            
+            if (gameState === 'PREDATOR_CHALLENGE') {
+                clearInterval(predatorInterval);
+                document.getElementById('predator-timer').classList.add('hidden');
+                setTimeout(() => { 
+                    document.getElementById('challenge-modal').classList.remove('active'); 
+                    gameState = 'PREDATOR_DEATH';
+                    explodingPredator = activeObstacle.mesh;
+                }, 800);
+            } else {
+                setTimeout(() => { document.getElementById('challenge-modal').classList.remove('active'); handleSuccess(); }, 800);
+            }
+        } else {
+            btn.classList.add('wrong');
+            playFailSound();
+            currentMistakes++;
+            
+            if (powerups.extraLife && currentMistakes === 1) {
+                document.getElementById('challenge-hint').textContent = "מגן פעיל: יש לך ניסיון נוסף!";
+                setTimeout(() => btn.classList.remove('wrong'), 500);
+                return; 
+            }
+            
+            if (gameState === 'PREDATOR_CHALLENGE') {
+                clearInterval(predatorInterval);
+                setTimeout(() => initiatePlayerDeath(), 500); 
+            } else {
+                setTimeout(() => btn.classList.remove('wrong'), 500);
+            }
+        }
+    }
+
+    function initiatePlayerDeath() {
+        document.getElementById('challenge-modal').classList.remove('active');
+        gameState = 'PLAYER_DEATH'; 
+        playFailSound();
+    }
+
+    function showGameOverScreen() {
+        gameState = 'GAMEOVER';
+        document.getElementById('game-over-modal').classList.add('active');
+    }
+
+    function handlePredatorSuccess() {
+        gameState = 'PLAYING';
+        activeObstacle.active = false;
+        addScore(5);
+        playerVelocityY = 0.5; isJumping = true; 
+    }
+    
+    function showPowerupModal(title, text) {
+        gameState = 'POWERUP';
+        playPowerupSound();
+        document.querySelector('#powerup-modal h2').textContent = title;
+        document.getElementById('powerup-desc').textContent = text;
+        document.getElementById('powerup-modal').classList.add('active');
+    }
+
+    function handleSuccess() {
+        if (!activeObstacle || activeObstacle.userData.cleared) return;
+        gameState = 'PLAYING';
+        let gainedScore = activeObstacle.userData.config?.score ?? 10;
+        addScore(gainedScore);
+
+        activeObstacle.userData.cleared = true;
+        activeObstacle.children.forEach(c => c.visible = false);
+
+        if (activeObstacle.userData.type === 'bridge_gate') {
+            activeObstacle.userData.deck.visible = true;
+            const opened = bridgeCheckpoints.filter(gate => gate.userData.cleared).length;
+            document.getElementById('space-warning').textContent = `שערים פתוחים: ${opened} מתוך 3 🚪`;
+            return;
+        }
+
+        if(activeObstacle.userData.type === 'rainbow_gate') {
+            const count=rainbowGates.filter(g=>g.userData.cleared).length;
+            document.getElementById('space-warning').textContent=`שערי הקשת שנפתחו: ${count} מתוך 3 🌈`;
+            return;
+        }
+        if(activeObstacle.userData.type === 'rainbow_chest') {
+            if(activeObstacle.userData.final){rainbowWorld.complete=true;document.getElementById('space-warning').textContent='כל הכבוד! הגעתם לזהב שבקצה הקשת! '+(rainbowPowers.bonus?100:50)+' 🏆';}
+            else document.getElementById('space-warning').textContent='תיבת הקשת נפתחה! +'+(rainbowPowers.bonus?30:15)+' מטבעות 🪙';
+            return;
+        }
+
+        if(activeObstacle.userData.type === 'npc_gate') {
+            friendsRescued++;
+            if(activeObstacle.userData.realm==='rainbow') {
+                const index=activeObstacle.userData.powerIndex,key=rainbowPowerKeys[index];
+                rainbowPowers[key]=true;
+                npcList.forEach(npc=>{if(npc.gate===activeObstacle)npc.isFree=true;});
+                showPowerupModal('כוח חדש: '+rainbowPowerNames[index],rainbowPowerDescriptions[index]);
+                refreshRainbowPowers();return;
+            }
+            
+            if (friendsRescued === 1) {
+                powerups.superJump = true;
+                document.getElementById('power-jump').classList.add('active');
+                showPowerupModal("חבר ראשון חולץ!", "קיבלת כוח: קפיצת העל פעילה! (מקש רווח)");
+            } else if (friendsRescued === 2) {
+                powerups.extraLife = true;
+                document.getElementById('power-shield').classList.add('active');
+                showPowerupModal("חבר שני חולץ!", "קיבלת כוח: יש לך זכות טעות אחת בכל תרגיל!");
+            } else if (friendsRescued === 3) {
+                powerups.slowEnemies = true;
+                document.getElementById('power-slow').classList.add('active');
+                showPowerupModal("חבר שלישי חולץ!", "קיבלת כוח: האויבים עכשיו ינועו לאט יותר!");
+            }
+            
+            if (friendsRescued === totalFriends && !powerups.godMode) {
+                powerups.godMode = true;
+                document.getElementById('power-god').classList.add('active');
+                showPowerupModal("הצוות מושלם!", "כוח על: אויבים שייגעו בך יתפוצצו מיד ללא שאלות!");
+            }
+
+            npcList.forEach(npc => { if(npc.gate === activeObstacle) npc.isFree = true; });
+        }
+
+        if(activeObstacle.userData.type === 'space_portal') {
+            activateSpaceRealm();
+        }
+
+        monsterRig.scale.addScalar(0.1); 
+        playerVelocityY = 0.5; isJumping = true; 
+    }
+
+    function activateSpaceRealm() {
+        if (isSpaceRealmOpen) return;
+        isSpaceRealmOpen = true;
+        document.getElementById('space-warning').classList.remove('hidden');
+        document.getElementById('space-warning').textContent = 'השער לירח נפתח! עקבו אחר החץ 🌙';
+
+        const railMat = new THREE.MeshLambertMaterial({color: 0x65e5ff, emissive: 0x164a66});
+        function walkway(start, end, color, raised = false) {
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(16, 2, start-end),
+                new THREE.MeshLambertMaterial({color}));
+            deck.position.set(0, -1, (start+end)/2);
+            deck.visible = !raised;
+            deck.receiveShadow = true;
+            scene.add(deck);
+            for (const x of [-8, 8]) {
+                const rail = new THREE.Mesh(new THREE.BoxGeometry(1, 3, start-end), railMat);
+                rail.position.set(x, 1.5, (start+end)/2); scene.add(rail);
+            }
+            return deck;
+        }
+        walkway(-380, -410, 0x839bb4);
+        walkway(-530, -570, 0x839bb4);
+        walkway(-690, -730, 0x839bb4);
+        walkway(-850, MOON_ENTRY, 0x839bb4);
+        const colors = [0x46c6d8, 0xa58be8, 0xf0bd59];
+        for (let i=0; i<3; i++) {
+            const start = -410-i*160;
+            const deck = walkway(start, start-120, colors[i]);
+            const gate = createObstacle(0, start, 'bridge_gate', `שער ${i+1} מתוך 3 — אתגר ברמה הבאה`, {score: 0});
+            gate.userData.deck = deck;
+            const barrier = new THREE.Mesh(new THREE.BoxGeometry(16, 6, 1),
+                new THREE.MeshLambertMaterial({color: colors[i], transparent: true, opacity: .8}));
+            barrier.position.y = 3; gate.add(barrier);
+            for (const x of [-10, 10]) {
+                const pillar = new THREE.Mesh(new THREE.BoxGeometry(3, 10, 3),
+                    new THREE.MeshLambertMaterial({color: colors[i]}));
+                pillar.position.set(x, 5, start); scene.add(pillar);
+            }
+            bridgeCheckpoints.push(gate);
+        }
+        document.getElementById('space-warning').textContent = 'הדרך לירח נפתחה! שערים פתוחים: 0 מתוך 3 🚪';
+
+        // A repeating crater texture keeps this deliverable a single HTML file.
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#8491a7'; ctx.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 90; i++) {
+            const x = Math.random()*256, y = Math.random()*256, r = 2 + Math.random()*15;
+            ctx.fillStyle = '#a7b3c7'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#657188'; ctx.beginPath(); ctx.arc(x+1,y+2,r*0.8,0,Math.PI*2); ctx.fill();
+        }
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(24, 20);
+        buildMoonTerrain(new THREE.MeshLambertMaterial({map:texture}));
+        const wallMat = new THREE.MeshLambertMaterial({color: 0x6578aa, emissive: 0x131d39});
+        function wall(x, z, width, depth) {
+            const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 7, depth), wallMat);
+            mesh.position.set(x, 3.5, z); scene.add(mesh);
+        }
+        wall(-MOON_HALF_WIDTH, -1150, 3, 560); wall(MOON_HALF_WIDTH, -1150, 3, 560);
+        wall(0, MOON_FAR, 640, 3);
+        wall(-165, MOON_ENTRY, 310, 3); wall(165, MOON_ENTRY, 310, 3);
+        createMoonFriends();
+        createTreasureIsland();
+        for (let i = 0; i < 8; i++) {
+            let ax,az,attempts=0;
+            do {
+                ax=(Math.random()-.5)*540;az=MOON_ENTRY-140-Math.random()*360;
+                attempts++;
+            } while (attempts<100 && npcList.some(npc => npc.realm==='moon' && Math.hypot(ax-npc.origin.x,az-npc.origin.z)<35));
+            createAsteroid(ax,az,i);
+        }
+        for (let i = 0; i < 7; i++) {
+            const ox=(i%2 ? 1 : -1)*(60+i*29), oz=MOON_ENTRY-90-i*63;
+            createObstacle(ox, oz, 'math_block', 'אתגר ירח', {score: 5}, terrainHeightAt(ox,oz));
+        }
+    }
+
+    function isPlayerOnPath(x, z) {
+        if(rainbowFootprint(x,z)) return true;
+        if (isSpaceRealmOpen && Math.abs(x) <= 8 && z < -380 && z >= MOON_ENTRY) return true;
+        for (let p of dynamicPaths) {
+            if (Math.hypot(x - p.x, z - p.z) < p.radius) return true;
+        }
+        return false;
+    }
+
+    createWorld();
+    const clock = new THREE.Clock();
+
+    let accumulator = 0;
+    let simulationTime = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        accumulator += Math.min(clock.getDelta(), 0.1);
+        while (accumulator >= 1/60) {
+            stepGame();
+            accumulator -= 1/60;
+        }
+        renderer.render(scene, camera);
+    }
+
+    function stepGame() {
+        const delta = 1/60;
+        const time = simulationTime += delta;
+        if (isSpaceRealmOpen && spaceWall.position.y > -7) spaceWall.position.y = Math.max(-7, spaceWall.position.y - 12*delta);
+
+        if (gameState === 'PREDATOR_DEATH' && explodingPredator) {
+            explodingPredator.scale.addScalar(0.3); 
+            if (explodingPredator.scale.x > 4) { 
+                explodingPredator.visible = false;
+                explodingPredator = null;
+                playPopSound();
+                handlePredatorSuccess(); 
+            }
+        }
+        else if (gameState === 'PLAYER_DEATH') {
+            monsterRig.scale.addScalar(0.2); 
+            if (monsterRig.scale.x > 5) { 
+                monsterRig.visible = false;
+                playExplosionSound();
+                showGameOverScreen(); 
+            }
+        }
+        else if (gameState === 'PLAYING') {
+            updateRainbowPowers(delta);
+            const wasOnIsland = !isJumping && (supportingMoonPlatform(playerGroup.position.x,playerGroup.position.z,playerGroup.position.y) || (rainbowSurfaceAt(playerGroup.position.x,playerGroup.position.z)!==null && playerGroup.position.y>=rainbowSurfaceAt(playerGroup.position.x,playerGroup.position.z)-.8));
+            let moveX = 0, moveZ = 0;
+            let currentSpeed = (isPlayerOnPath(playerGroup.position.x, playerGroup.position.z) ? WALK_SPEED / 60 : 0.2) * movementSpeedMultiplier * (currentRealm==='rainbow'&&rainbowTimers.dashActive>0?2:1);
+
+            if (keys.up) moveZ = -currentSpeed;
+            if (keys.down) moveZ = currentSpeed;
+            if (keys.left) moveX = -currentSpeed; 
+            if (keys.right) moveX = currentSpeed; 
+
+            let newX = playerGroup.position.x + moveX;
+            let newZ = playerGroup.position.z + moveZ;
+            let collided = false;
+
+            // Full-width triggers also stop jumping or walking around the indicator.
+            const gateAhead = bridgeCheckpoints.find(gate => !gate.userData.cleared && Math.abs(newX) <= 6 && Math.abs(newZ-gate.position.z) < 4);
+            const colorGate=rainbowGateAhead(newX,newZ,playerGroup.position.y);
+            if (colorGate) { triggerChallenge(colorGate);collided=true; }
+            else if (gateAhead) {
+                triggerChallenge(gateAhead);
+                collided = true;
+            } else {
+                collided = !canWalkAt(newX, newZ);
+            }
+
+            if (!collided) {
+                for (let obs of interactables) {
+                    if (!obs.userData.cleared && (!obs.userData.realm || obs.userData.realm===currentRealm) && Math.abs(playerGroup.position.y-obs.position.y)<5 && Math.hypot(newX - obs.position.x, newZ - obs.position.z) < 4) {
+                        collided = true;
+                        triggerChallenge(obs);
+                        break;
+                    }
+                }
+            }
+
+            if (!collided) {
+                playerGroup.position.x = newX;
+                playerGroup.position.z = newZ;
+            }
+
+            if (moveX !== 0 || moveZ !== 0) {
+                let targetRot = Math.atan2(-moveX, -moveZ);
+                let diff = targetRot - playerGroup.rotation.y;
+                while(diff < -Math.PI) diff += 2*Math.PI; while(diff > Math.PI) diff -= 2*Math.PI;
+                playerGroup.rotation.y += diff * 0.15;
+            }
+
+            groundHeight = playerSurfaceHeight(playerGroup.position.x, playerGroup.position.z, playerGroup.position.y);
+            if (wasOnIsland && groundHeight < playerGroup.position.y-.8) {
+                isJumping=true;playerVelocityY=0;
+            }
+            if (!isJumping) playerGroup.position.y = groundHeight;
+
+            // Low gravity on the Moon.
+            const isInRainbow=rainbowWorld && (inRainbowArena(playerGroup.position.x,playerGroup.position.z) || Math.hypot(playerGroup.position.x-rainbowWorld.entryX,playerGroup.position.z-rainbowWorld.z)<=12) && playerGroup.position.y>=rainbowWorld.height-.8;
+            let isInSpace = playerGroup.position.z <= MOON_ENTRY && !isInRainbow && currentRealm!=='rainbow';
+            if(isInRainbow && currentRealm!=='rainbow') resetRealmPowers('rainbow');
+            else if (!isInRainbow && playerGroup.position.z<=MOON_ENTRY && (!rainbowWorld || playerGroup.position.x<rainbowWorld.entryX) && currentRealm!=='moon') resetRealmPowers('moon');
+            else if (playerGroup.position.z >= -390 && currentRealm !== 'earth') resetRealmPowers('earth');
+            if (isInSpace) playerVelocityY = Math.min(playerVelocityY, powerups.superJump ? 0.95 : 0.48);
+            if (isInSpace && !moonVisited) {
+                moonVisited = true;
+                document.getElementById('space-warning').textContent = 'ברוכים הבאים לירח! הכוחות התאפסו — הצילו כאן חברים 🌙';
+            }
+            
+            // Dynamic Background Color (transition to space)
+            if (isSpaceRealmOpen) {
+                let darkFactor = Math.max(0, Math.min(1, (playerGroup.position.z + 390) / -480));
+                scene.background = new THREE.Color().lerpColors(new THREE.Color(0x87CEEB), new THREE.Color(0x0a001a), darkFactor);
+                const roadLight=onRainbowRoad(playerGroup.position.x,playerGroup.position.z) && playerGroup.position.y>=rainbowWorld.height-.8 ? (playerGroup.position.x-rainbowWorld.startX)/(rainbowWorld.entryX-rainbowWorld.startX) : 0;
+                if(currentRealm==='rainbow' || roadLight>0) scene.background=new THREE.Color().lerpColors(scene.background,new THREE.Color(0xace4ff),currentRealm==='rainbow'?1:roadLight);
+                scene.fog.color = scene.background;
+                scene.fog.far=currentRealm==='rainbow'?700:300;
+            }
+
+            if (isJumping) {
+                if(currentRealm==='rainbow'&&rainbowPowers.glide&&playerVelocityY<-.12)playerVelocityY=-.12;
+                playerGroup.position.y += playerVelocityY;
+                
+                // Low gravity in space!
+                let gravity = currentRealm==='rainbow' ? .03 : isInSpace ? 0.016 : (powerups.superJump ? 0.2 : 0.04);
+                playerVelocityY -= gravity;
+                
+                if (playerGroup.position.y <= groundHeight) {
+                    playerGroup.position.y = groundHeight;
+                    isJumping = false;
+                    playerVelocityY = 0;
+                }
+            } else if (playerGroup.position.y > groundHeight) {
+                isJumping = true; playerVelocityY = 0;
+            }
+
+            updateTreasureIsland(delta,time);
+            rainbowDecorations.forEach(crystal=>crystal.rotation.y+=delta*.65);
+
+            npcList.forEach(npc => {
+                if ((npc.realm || 'earth') !== currentRealm) return;
+                if (npc.isFree) {
+                    npc.mesh.position.y = rainbowNpcHeight(npc) + Math.abs(Math.sin(time*10))*0.5;
+                    let dx = playerGroup.position.x - npc.mesh.position.x;
+                    let dz = playerGroup.position.z - npc.mesh.position.z;
+                    if(Math.hypot(dx, dz) > 4) {
+                        let nx=npc.mesh.position.x+dx*.02,nz=npc.mesh.position.z+dz*.02;
+                        if(npc.realm==='rainbow') {
+                            const polar=rainbowPolar(nx,nz),angle=Math.max(.02,Math.min(Math.PI-.02,polar.angle));
+                            const point=rainbowPoint(angle,Math.max(218,Math.min(342,polar.radius)));nx=point.x;nz=point.z;
+                        } else if (npc.realm==='moon') {
+                            nx=Math.max(-MOON_HALF_WIDTH+5,Math.min(MOON_HALF_WIDTH-5,nx));
+                            nz=Math.max(MOON_FAR+5,Math.min(MOON_ENTRY-5,nz));
+                        } else if(Math.hypot(nx,nz)>WORLD_RADIUS-5) {
+                            const factor=(WORLD_RADIUS-5)/Math.hypot(nx,nz);nx*=factor;nz*=factor;
+                        }
+                        npc.mesh.position.x=nx;npc.mesh.position.z=nz;
+                        npc.mesh.position.y = rainbowNpcHeight(npc) + Math.abs(Math.sin(time*10))*0.5;
+                    }
+                } else {
+                    npc.mesh.position.x = npc.origin.x + Math.sin(time + npc.mesh.id)*2;
+                    npc.mesh.position.z = npc.origin.z + Math.cos(time + npc.mesh.id)*2;
+                    npc.mesh.position.y = rainbowNpcHeight(npc);
+                }
+            });
+
+            predators.forEach(pred => {
+                if (pred.active) {
+                    if (pred.isAsteroid) {
+                        pred.rock.rotation.x+=delta*.28;pred.rock.rotation.z+=delta*.17;
+                        pred.trail.forEach((flame,i) => {
+                            const size=(2.5-i*.16)*(1+.14*Math.sin(time*13+i+pred.phase));
+                            flame.scale.set(size,size*.75,size*1.8);
+                            flame.position.x=Math.sin(time*8+i)*i*.055;
+                            flame.position.y=6+Math.cos(time*9+i)*.3;
+                        });
+                    }
+                    if ((pred.realm || (pred.isAlien ? 'moon' : 'earth')) !== currentRealm) return;
+                    if(pred.isCloud) {
+                        pred.mesh.position.y=rainbowWorld.height+Math.sin(time*3+pred.phase)*.35;
+                        if(rainbowTimers.cloakActive>0)return;
+                    }
+                    let dx = playerGroup.position.x - pred.mesh.position.x;
+                    let dz = playerGroup.position.z - pred.mesh.position.z;
+                    let dist = Math.hypot(dx, dz);
+                    
+                    // Aliens only wake up if you are in space
+                    let agroRadius = pred.isCloud ? 125 : pred.isAlien ? (isInSpace ? 150 : 0) : 80;
+                    
+                    if (playerHitsPredator(pred)) {
+                        triggerPredatorChallenge(pred);
+                    } else if (dist < agroRadius && dist > 0.000001) { 
+                        let speedMultiplier = powerups.slowEnemies ? 0.3 : 1.0;
+                        let predSpeed = pred.isCloud ? .27 : (isPlayerOnPath(pred.mesh.position.x, pred.mesh.position.z) ? 0.4 : 0.2) * speedMultiplier;
+                        
+                        let predNewX = pred.mesh.position.x + (dx / dist) * predSpeed;
+                        let predNewZ = pred.mesh.position.z + (dz / dist) * predSpeed;
+                        
+                        // Keep earth predators on earth, aliens in space
+                        if(pred.isCloud) {
+                            placeCloudWithinRainbow(pred,predNewX,predNewZ);
+                        } else if (pred.isAlien) {
+                             if (Math.abs(predNewX) < MOON_HALF_WIDTH-8 && predNewZ < MOON_ENTRY - 10 && predNewZ > MOON_FAR + 8) {
+                                 pred.mesh.position.x = predNewX; pred.mesh.position.z = predNewZ;
+                             }
+                        } else {
+                             if (Math.hypot(predNewX, predNewZ) <= WORLD_RADIUS) {
+                                 pred.mesh.position.x = predNewX; pred.mesh.position.z = predNewZ;
+                             }
+                        }
+                        
+                        pred.mesh.position.y = (pred.isCloud?rainbowWorld.height:terrainHeightAt(pred.mesh.position.x,pred.mesh.position.z)) + Math.abs(Math.sin(time*10))*0.5;
+                        let targetRot = Math.atan2(-dx, -dz);
+                        pred.mesh.rotation.y = targetRot;
+                    }
+                }
+            });
+
+            camera.position.lerp(new THREE.Vector3(playerGroup.position.x, playerGroup.position.y + (powerups.superJump?40:20), playerGroup.position.z + 35), 0.1);
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y, playerGroup.position.z);
+            
+            if (isSpaceRealmOpen && !moonVisited) {
+                questArrow.visible = true;
+                questArrow.position.set(
+                    playerGroup.position.x, 
+                    playerGroup.position.y + 6 + Math.sin(time * 5) * 0.5, 
+                    playerGroup.position.z
+                );
+                const nextBridge = bridgeCheckpoints.find(gate => !gate.userData.cleared);
+                const targetZ = playerGroup.position.z > -380 ? -395 : nextBridge ? nextBridge.position.z : MOON_ENTRY - 15;
+                const dx = -playerGroup.position.x;
+                const dz = targetZ - playerGroup.position.z;
+                // This mesh points along local -Z (unlike Object3D.lookAt's +Z).
+                if (Math.hypot(dx, dz) > 0.01) {
+                    questArrow.rotation.y = Math.atan2(-dx, -dz);
+                }
+            } else if (rainbowWorld && currentRealm==='moon') {
+                const source=moonPlatforms[3];
+                const onRoad=onRainbowRoad(playerGroup.position.x,playerGroup.position.z) && playerGroup.position.y>=rainbowWorld.height-.8;
+                const tx=onRoad?rainbowWorld.entryX:source.x,tz=source.z;
+                questArrow.visible=true;
+                questArrow.position.set(playerGroup.position.x,playerGroup.position.y+6,playerGroup.position.z);
+                questArrow.rotation.y=Math.atan2(playerGroup.position.x-tx,playerGroup.position.z-tz);
+            } else {
+                questArrow.visible = false;
+            }
+            
+            interactables.forEach(obs => { if(!obs.userData.cleared) obs.userData.indicator.rotation.y += delta; });
+        }
+        
+    }
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+</script>
+</body>
+</html>
