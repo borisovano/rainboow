@@ -43,14 +43,16 @@
         #rainbow-power-buttons button { border:1px solid #bda1e4; border-radius:8px; padding:6px; background:#eee5ff; cursor:pointer; }
         #rainbow-power-buttons button:disabled { opacity:.55; cursor:default; }
         .math-text { direction: ltr; display: inline-block; }
-        #breathing-modal { z-index: 30; background: #eaf7f8; padding: 16px; box-sizing: border-box; overflow: auto; }
-        .breathing-card { width: 440px; max-width: 100%; text-align: center; color: #235d69; outline: none; }
-        .breathing-card h2 { font-size: clamp(26px, 5vw, 36px); font-weight: 900; margin: 12px 0 8px; }
-        .breathing-card p { font-size: 18px; line-height: 1.7; margin: 0; }
-        .breathing-child { display: block; width: min(76vw, 360px, 55vh); height: auto; margin: 0 auto; border-radius: 50%; }
-        #breathing-modal.active .breathing-child { animation: gentle-breath 6s ease-in-out infinite; }
+        #challenge-modal .modal-content { position: relative; }
+        #challenge-content.breathing { visibility: hidden; }
+        #breathing-card { display: none; position: absolute; inset: 0; padding: 20px; border-radius: inherit; background: #eaf7f8; color: #235d69; outline: none; align-items: center; justify-content: center; flex-direction: column; }
+        #breathing-card.active { display: flex; }
+        #breathing-card h2 { font-size: 28px; font-weight: 900; margin: 10px 0 6px; }
+        #breathing-card p { font-size: 18px; line-height: 1.5; margin: 0; }
+        .breathing-child { display: block; width: min(55vw, 220px); max-height: 55%; object-fit: contain; border-radius: 50%; }
+        #breathing-card.active .breathing-child { animation: gentle-breath 5s ease-in-out; }
         @keyframes gentle-breath { 0%, 100% { transform: scale(.96); } 50% { transform: scale(1); } }
-        @media (prefers-reduced-motion: reduce) { #breathing-modal.active .breathing-child { animation: none; } }
+        @media (prefers-reduced-motion: reduce) { #breathing-card.active .breathing-child { animation: none; } }
     </style>
 </head>
 <body>
@@ -113,18 +115,10 @@
         </div>
     </div>
 
-    <!-- A quiet pause before an enemy's timed challenge. No countdown is displayed. -->
-    <div id="breathing-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="breathing-title" aria-describedby="breathing-description">
-        <div class="breathing-card" id="breathing-card" tabindex="-1">
-            <img class="breathing-child" src="assets/breathing-child.png" alt="ילד נושם בנחת, יד אחת על הבטן ויד אחת על החזה" width="1024" height="1024">
-            <h2 id="breathing-title">רגע לנשימה</h2>
-            <p id="breathing-description">נושמים בנחת, בקצב שלכם.<br>המשחק מחכה לכם.</p>
-        </div>
-    </div>
-
     <!-- Challenge Modal -->
-    <div id="challenge-modal" class="modal-overlay">
+    <div id="challenge-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-label="אתגר חשבון">
         <div class="modal-content interactive-ui">
+            <div id="challenge-content">
             <h2 class="text-2xl text-blue-600 mb-2 font-bold" id="challenge-story">פתור את זה!</h2>
             <div id="predator-timer" class="text-4xl text-red-600 font-black hidden mb-2">30</div>
             <p id="challenge-hint" class="text-sm text-green-600 font-bold h-4"></p>
@@ -132,6 +126,12 @@
                 <div class="text-4xl text-center text-blue-800 font-black math-text" id="math-problem">2 + 3 = ?</div>
             </div>
             <div class="answer-grid" id="answers-container"></div>
+            </div>
+            <div id="breathing-card" tabindex="-1" aria-labelledby="breathing-title" aria-describedby="breathing-description">
+                <img class="breathing-child" src="assets/breathing-child.png" alt="ילד נושם בנחת, יד אחת על הבטן ויד אחת על החזה" width="1024" height="1024">
+                <h2 id="breathing-title">רגע לנשימה</h2>
+                <p id="breathing-description">נושמים בנחת, בקצב שלכם.</p>
+            </div>
         </div>
     </div>
 
@@ -179,7 +179,7 @@
     let score = 0;
     let currentChallenge = null;
     let activeObstacle = null;
-    const BREATHING_PAUSE_SECONDS = 5 * 60;
+    const BREATHING_PAUSE_SECONDS = 5;
     let breathingSecondsLeft = 0;
     let breathingPredator = null;
     
@@ -1022,15 +1022,16 @@
             return;
         }
         
+        preparePredatorMathChallenge(predatorObj);
         gameState = 'BREATHING';
         breathingPredator = predatorObj;
         breathingSecondsLeft = BREATHING_PAUSE_SECONDS;
         Object.keys(keys).forEach(key => keys[key] = false);
         clearInterval(predatorInterval);
-        document.getElementById('challenge-modal').classList.remove('active');
-        document.getElementById('predator-timer').classList.add('hidden');
+        document.getElementById('challenge-content').classList.add('breathing');
+        document.getElementById('challenge-content').inert = true;
         document.getElementById('ui-layer').inert = true;
-        document.getElementById('breathing-modal').classList.add('active');
+        document.getElementById('breathing-card').classList.add('active');
         document.getElementById('breathing-card').focus?.();
     }
 
@@ -1039,16 +1040,16 @@
         breathingSecondsLeft = Math.max(0, breathingSecondsLeft - delta);
         if (breathingSecondsLeft > 0.000001) return;
         breathingSecondsLeft = 0;
-        const predatorObj = breathingPredator;
         breathingPredator = null;
-        document.getElementById('breathing-modal').classList.remove('active');
+        document.getElementById('breathing-card').classList.remove('active');
+        document.getElementById('challenge-content').classList.remove('breathing');
+        document.getElementById('challenge-content').inert = false;
         document.getElementById('ui-layer').inert = false;
         Object.keys(keys).forEach(key => keys[key] = false);
-        beginPredatorMathChallenge(predatorObj);
+        beginPredatorMathChallenge();
     }
 
-    function beginPredatorMathChallenge(predatorObj) {
-        gameState = 'PREDATOR_CHALLENGE';
+    function preparePredatorMathChallenge(predatorObj) {
         activeObstacle = predatorObj;
         currentMistakes = 0; 
         
@@ -1125,6 +1126,12 @@
         document.getElementById('predator-timer').textContent = predatorTimeLeft;
         document.getElementById('challenge-hint').textContent = '';
         
+        applyRainbowHint();
+        document.getElementById('challenge-modal').classList.add('active');
+    }
+
+    function beginPredatorMathChallenge() {
+        gameState = 'PREDATOR_CHALLENGE';
         predatorInterval = setInterval(() => {
             predatorTimeLeft--;
             document.getElementById('predator-timer').textContent = predatorTimeLeft;
@@ -1134,12 +1141,11 @@
             }
         }, 1000);
         
-        applyRainbowHint();
-        document.getElementById('challenge-modal').classList.add('active');
         document.querySelector('#answers-container button')?.focus?.();
     }
 
     function checkAnswer(selected, btn) {
+        if (gameState !== 'CHALLENGE' && gameState !== 'PREDATOR_CHALLENGE') return;
         if (btn.disabled) return;
         if (selected === currentChallenge.answer) {
             document.querySelectorAll('.answer-btn').forEach(button => button.disabled = true);
@@ -1362,24 +1368,29 @@
     createWorld();
     const clock = new THREE.Clock();
 
+    // Reset the frame clock on tab switches so only visible breathing time counts.
+    window.addEventListener('visibilitychange', () => clock.getDelta());
     let accumulator = 0;
     let simulationTime = 0;
     function animate() {
         requestAnimationFrame(animate);
-        accumulator += Math.min(clock.getDelta(), 0.1);
-        while (accumulator >= 1/60) {
-            stepGame();
-            accumulator -= 1/60;
+        const elapsed = clock.getDelta();
+        if (gameState === 'BREATHING') {
+            updateBreathingPause(elapsed);
+            accumulator = 0;
+        } else {
+            accumulator += Math.min(elapsed, 0.1);
+            while (accumulator >= 1/60) {
+                stepGame();
+                accumulator -= 1/60;
+            }
         }
         renderer.render(scene, camera);
     }
 
     function stepGame() {
         const delta = 1/60;
-        if (gameState === 'BREATHING') {
-            updateBreathingPause(delta);
-            return;
-        }
+        if (gameState === 'BREATHING') return;
         const time = simulationTime += delta;
         if (isSpaceRealmOpen && spaceWall.position.y > -7) spaceWall.position.y = Math.max(-7, spaceWall.position.y - 12*delta);
 
