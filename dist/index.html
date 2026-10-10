@@ -43,6 +43,14 @@
         #rainbow-power-buttons button { border:1px solid #bda1e4; border-radius:8px; padding:6px; background:#eee5ff; cursor:pointer; }
         #rainbow-power-buttons button:disabled { opacity:.55; cursor:default; }
         .math-text { direction: ltr; display: inline-block; }
+        #breathing-modal { z-index: 30; background: #eaf7f8; padding: 16px; box-sizing: border-box; overflow: auto; }
+        .breathing-card { width: 440px; max-width: 100%; text-align: center; color: #235d69; outline: none; }
+        .breathing-card h2 { font-size: clamp(26px, 5vw, 36px); font-weight: 900; margin: 12px 0 8px; }
+        .breathing-card p { font-size: 18px; line-height: 1.7; margin: 0; }
+        .breathing-child { display: block; width: min(76vw, 360px, 55vh); height: auto; margin: 0 auto; border-radius: 50%; }
+        #breathing-modal.active .breathing-child { animation: gentle-breath 6s ease-in-out infinite; }
+        @keyframes gentle-breath { 0%, 100% { transform: scale(.96); } 50% { transform: scale(1); } }
+        @media (prefers-reduced-motion: reduce) { #breathing-modal.active .breathing-child { animation: none; } }
     </style>
 </head>
 <body>
@@ -105,6 +113,15 @@
         </div>
     </div>
 
+    <!-- A quiet pause before an enemy's timed challenge. No countdown is displayed. -->
+    <div id="breathing-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="breathing-title" aria-describedby="breathing-description">
+        <div class="breathing-card" id="breathing-card" tabindex="-1">
+            <img class="breathing-child" src="assets/breathing-child.png" alt="ילד נושם בנחת, יד אחת על הבטן ויד אחת על החזה" width="1024" height="1024">
+            <h2 id="breathing-title">רגע לנשימה</h2>
+            <p id="breathing-description">נושמים בנחת, בקצב שלכם.<br>המשחק מחכה לכם.</p>
+        </div>
+    </div>
+
     <!-- Challenge Modal -->
     <div id="challenge-modal" class="modal-overlay">
         <div class="modal-content interactive-ui">
@@ -162,6 +179,9 @@
     let score = 0;
     let currentChallenge = null;
     let activeObstacle = null;
+    const BREATHING_PAUSE_SECONDS = 5 * 60;
+    let breathingSecondsLeft = 0;
+    let breathingPredator = null;
     
     let isSpaceRealmOpen = false;
     let spaceWall = null; // The physical barrier
@@ -1002,6 +1022,32 @@
             return;
         }
         
+        gameState = 'BREATHING';
+        breathingPredator = predatorObj;
+        breathingSecondsLeft = BREATHING_PAUSE_SECONDS;
+        Object.keys(keys).forEach(key => keys[key] = false);
+        clearInterval(predatorInterval);
+        document.getElementById('challenge-modal').classList.remove('active');
+        document.getElementById('predator-timer').classList.add('hidden');
+        document.getElementById('ui-layer').inert = true;
+        document.getElementById('breathing-modal').classList.add('active');
+        document.getElementById('breathing-card').focus?.();
+    }
+
+    function updateBreathingPause(delta) {
+        if (gameState !== 'BREATHING' || document.hidden) return;
+        breathingSecondsLeft = Math.max(0, breathingSecondsLeft - delta);
+        if (breathingSecondsLeft > 0.000001) return;
+        breathingSecondsLeft = 0;
+        const predatorObj = breathingPredator;
+        breathingPredator = null;
+        document.getElementById('breathing-modal').classList.remove('active');
+        document.getElementById('ui-layer').inert = false;
+        Object.keys(keys).forEach(key => keys[key] = false);
+        beginPredatorMathChallenge(predatorObj);
+    }
+
+    function beginPredatorMathChallenge(predatorObj) {
         gameState = 'PREDATOR_CHALLENGE';
         activeObstacle = predatorObj;
         currentMistakes = 0; 
@@ -1090,6 +1136,7 @@
         
         applyRainbowHint();
         document.getElementById('challenge-modal').classList.add('active');
+        document.querySelector('#answers-container button')?.focus?.();
     }
 
     function checkAnswer(selected, btn) {
@@ -1329,6 +1376,10 @@
 
     function stepGame() {
         const delta = 1/60;
+        if (gameState === 'BREATHING') {
+            updateBreathingPause(delta);
+            return;
+        }
         const time = simulationTime += delta;
         if (isSpaceRealmOpen && spaceWall.position.y > -7) spaceWall.position.y = Math.max(-7, spaceWall.position.y - 12*delta);
 
@@ -1473,6 +1524,7 @@
             });
 
             predators.forEach(pred => {
+                if (gameState !== 'PLAYING') return;
                 if (pred.active) {
                     if (pred.isAsteroid) {
                         pred.rock.rotation.x+=delta*.28;pred.rock.rotation.z+=delta*.17;
@@ -1524,6 +1576,7 @@
                 }
             });
 
+            if (gameState !== 'PLAYING') return;
             camera.position.lerp(new THREE.Vector3(playerGroup.position.x, playerGroup.position.y + (powerups.superJump?40:20), playerGroup.position.z + 35), 0.1);
             camera.lookAt(playerGroup.position.x, playerGroup.position.y, playerGroup.position.z);
             
