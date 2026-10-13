@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict');
+const {createDialog,createRegistry}=require('../dist/dialogs/math-dialog.js');
+const {createDocument}=require('./helpers/dom.cjs');
+const registry=createRegistry().register('base',{theme:{'--md-accent':'blue'},groups:['a']}).register('child',{extends:'base',theme:{'--md-ink':'navy'},groups:['a','b']});
+assert.equal(registry.resolve('child').theme['--md-accent'],'blue');assert.equal(registry.list({group:'b'}).length,1);assert.throws(()=>registry.register('base',{}));
+registry.register('cycle',{extends:'cycle'});assert.throws(()=>registry.resolve('cycle'),/Circular/);
+const document=createDocument(),background=document.createElement('main'),trigger=document.createElement('button');document.body.append(background,trigger);trigger.focus();
+let answered=0,cleaned=0;
+const d=createDialog({document,background:[background],onAnswer:()=>answered++,slots:{footer:ctx=>{ctx.onCleanup(()=>cleaned++);return ctx.node('p','','Footer');}}});
+d.render({text:'2 + 3',options:[4,5]}).show();assert(background.inert);
+const first=d.element.querySelector('button');first.click();assert.equal(answered,1);
+d.setCover(true);first.click();assert.equal(answered,1);d.setCover(false);d.lockAnswers();first.click();assert.equal(answered,1);
+d.lockAnswers(false);d.render({text:'6 + 1',options:[7,8]});assert.equal(cleaned,2);
+const other=createDialog({document,background:[background]}).show();d.hide();assert(background.inert);other.hide();assert(!background.inert);
+d.show();document.emit('keydown',{key:'Escape',preventDefault(){}});assert(!d.isOpen);
+d.destroy();other.destroy();assert.equal(cleaned,3);assert.throws(()=>d.show(),/destroyed/);
+console.log('PASS: optional math presets, override inheritance, grouping, covered/locked answers, nested background locks and render/disposal cleanup.');

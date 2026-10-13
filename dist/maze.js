@@ -219,17 +219,17 @@ function stepMaze(delta,time){
     refreshMazePowers();
 }
 function mazeGuardHint(){
-    if(currentRealm==='maze'&&mazePowers.retry)document.getElementById('challenge-hint').textContent=`שאלה ${mazeQuestionsSolved+1} מתוך 2 · נשארו ${2-mazeEncounterMistakes} טעויות מותרות`;
+    if(currentRealm==='maze'&&mazePowers.retry)challengeDialog.setHint(`שאלה ${mazeQuestionsSolved+1} מתוך 2 · נשארו ${2-mazeEncounterMistakes} טעויות מותרות`);
 }
 function checkMazeGuardAnswer(selected,btn){
     if(currentRealm!=='maze'||!mazePowers.retry||gameState!=='PREDATOR_CHALLENGE')return false;
     if(selected===currentChallenge.answer&&mazeQuestionsSolved===0){
         mazeQuestionsSolved=1;clearInterval(predatorInterval);gameState='PREDATOR_TRANSITION';
-        btn.classList.add('correct');playSuccessSound();document.getElementById('challenge-hint').textContent='נכון! עוד שאלה אחת כדי לעבור את השומר.';
+        challengeDialog.markAnswer(btn,'correct');playSuccessSound();challengeDialog.setHint('נכון! עוד שאלה אחת כדי לעבור את השומר.');
         setTimeout(()=>{preparePredatorMathChallenge(activeObstacle);beginPredatorMathChallenge();},800);return true;
     }
     if(selected!==currentChallenge.answer&&mazeEncounterMistakes<2){
-        mazeEncounterMistakes++;btn.classList.add('wrong');playFailSound();mazeGuardHint();setTimeout(()=>btn.classList.remove('wrong'),500);return true;
+        mazeEncounterMistakes++;challengeDialog.markAnswer(btn,'wrong');playFailSound();mazeGuardHint();setTimeout(()=>challengeDialog.markAnswer(btn,null),500);return true;
     }
     if(selected!==currentChallenge.answer){clearInterval(predatorInterval);gameState='PREDATOR_FAILURE';playFailSound();setTimeout(()=>initiatePlayerDeath(),500);return true;}
     return false;

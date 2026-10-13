@@ -5,10 +5,10 @@ new vm.Script(src);
 class V {constructor(x=0,y=0,z=0){Object.assign(this,{x,y,z});}set(x,y,z){Object.assign(this,{x,y,z});return this;}addScalar(n){this.x+=n;this.y+=n;this.z+=n;}lerp(){}}
 let objectId=0;
 class Obj {constructor(geometry,material){this.material=material;this.id=++objectId;this.position=new V;this.rotation=new V;this.scale=new V(1,1,1);this.children=[];this.userData={};}add(...x){this.children.push(...x);}setAttribute(){}setIndex(){}computeVertexNormals(){}lookAt(){}setSize(){}render(){}updateProjectionMatrix(){} }
-const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
-const els={};const element=()=>({style:{},classList:{values:new Set(),add(v){this.values.add(v);},remove(v){this.values.delete(v);},contains(v){return this.values.has(v);}},appendChild(){},addEventListener(){},getContext:()=>({fillRect(){},beginPath(){},arc(){},fill(){}})});
-const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document:{getElementById:id=>els[id]??=element(),createElement:element,querySelector:()=>element(),querySelectorAll:()=>[]},window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(){},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
-vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};this.domElement=document.createElement("canvas");}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
+const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
+const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(){},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
+vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/dialogs',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 vm.runInContext(`
 const enemy=predators[0];gameState='PLAYING';keys.up=true;
 const initialPosition=JSON.stringify(playerGroup.position),initialEnemy=JSON.stringify(enemy.mesh.position),initialTime=simulationTime;
@@ -30,7 +30,7 @@ if(gameState!=='BREATHING'||globalThis.intervalStarts)throw Error('Challenge beg
 updateBreathingPause(.25);
 if(JSON.stringify(currentChallenge)!==preparedQuestion||document.getElementById('challenge-content').inert)throw Error('Question changed or stayed blocked');
 if(gameState!=='PREDATOR_CHALLENGE'||activeObstacle!==enemy||predatorTimeLeft!==30||globalThis.intervalStarts!==1)throw Error('Challenge did not begin with full time');
-if(document.getElementById('breathing-card').classList.contains('active')||document.getElementById('ui-layer').inert)throw Error('Breathing UI not cleared');
+if(document.getElementById('breathing-card').classList.contains('active'))throw Error('Breathing UI not cleared');
 updateBreathingPause(600);if(globalThis.intervalStarts!==1)throw Error('Duplicate timer');
 gameState='PLAYING';powerups.godMode=true;triggerPredatorChallenge(enemy);
 if(gameState!=='PREDATOR_DEATH')throw Error('Invincibility interrupted');

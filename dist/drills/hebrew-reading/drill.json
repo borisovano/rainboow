@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "id": "hebrew-reading",
+  "title": "מילה בקול",
+  "entry": "index.html",
+  "subject": "language-arts",
+  "language": "he-IL",
+  "direction": "rtl",
+  "difficulty": {
+    "level": 1,
+    "scale": "adventure-drills-v1",
+    "description": "Entry drill: read a familiar pointed Hebrew word with two or three letters; hints and retries available. This is not a school-grade assignment."
+  },
+  "proficiency": {
+    "scheme": "hebrew-early-literacy-v1",
+    "value": "beginning-word-reader",
+    "description": "Recognizes Hebrew letters and is beginning to decode short words with niqqud; not a CEFR rating or a phonetic assessment."
+  },
+  "skills": [
+    "hebrew-word-reading",
+    "letter-sound-association",
+    "niqqud-decoding"
+  ],
+  "gameLevels": [
+    1
+  ],
+  "groups": [
+    "reading",
+    "friend-rescue"
+  ],
+  "tags": [
+    "hebrew",
+    "early-literacy",
+    "pointed-text",
+    "two-letter-words",
+    "three-letter-words",
+    "read-aloud"
+  ],
+  "letters": [
+    "ב",
+    "ג",
+    "ד",
+    "ה",
+    "ו",
+    "ח",
+    "י",
+    "כ",
+    "ל",
+    "ם",
+    "מ",
+    "ן",
+    "נ",
+    "ס",
+    "ע",
+    "פ",
+    "ץ",
+    "ר",
+    "ש",
+    "ת"
+  ],
+  "content": {
+    "wordLengths": [
+      2,
+      3
+    ],
+    "niqqud": true,
+    "items": [
+      {
+        "word": "דָּג",
+        "letters": [
+          "ד",
+          "ג"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "גַּן",
+        "letters": [
+          "ג",
+          "ן"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "יָד",
+        "letters": [
+          "י",
+          "ד"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "הַר",
+        "letters": [
+          "ה",
+          "ר"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "סַל",
+        "letters": [
+          "ס",
+          "ל"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "גַּל",
+        "letters": [
+          "ג",
+          "ל"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "נֵר",
+        "letters": [
+          "נ",
+          "ר"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "עֵץ",
+        "letters": [
+          "ע",
+          "ץ"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "יַם",
+        "letters": [
+          "י",
+          "ם"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "פֶּה",
+        "letters": [
+          "פ",
+          "ה"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "כַּד",
+        "letters": [
+          "כ",
+          "ד"
+        ],
+        "letterCount": 2
+      },
+      {
+        "word": "בַּיִת",
+        "letters": [
+          "ב",
+          "י",
+          "ת"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "כֶּלֶב",
+        "letters": [
+          "כ",
+          "ל",
+          "ב"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "חָלָב",
+        "letters": [
+          "ח",
+          "ל",
+          "ב"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "סֵפֶר",
+        "letters": [
+          "ס",
+          "פ",
+          "ר"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "יֶלֶד",
+        "letters": [
+          "י",
+          "ל",
+          "ד"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "שֶׁמֶשׁ",
+        "letters": [
+          "ש",
+          "מ"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "דֶּלֶת",
+        "letters": [
+          "ד",
+          "ל",
+          "ת"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "תּוּת",
+        "letters": [
+          "ת",
+          "ו"
+        ],
+        "letterCount": 3
+      },
+      {
+        "word": "סוּס",
+        "letters": [
+          "ס",
+          "ו"
+        ],
+        "letterCount": 3
+      }
+    ]
+  },
+  "capabilities": [
+    "microphone",
+    "speech-synthesis"
+  ],
+  "assessment": {
+    "methods": [
+      "speech-transcript",
+      "adult-confirmed"
+    ],
+    "success": "One whole-word transcript match after stripping niqqud and punctuation, or explicit adult confirmation. The learner then returns to rescue the friend. No phonetic pronunciation scoring."
+  },
+  "source": {
+    "project": "hebrew-reading-lab",
+    "adaptation": "Original HTML, styling, word bank and reading behavior retained; game completion bridge and adult fallback added."
+  }
+}

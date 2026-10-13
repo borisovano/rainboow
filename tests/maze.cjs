@@ -5,10 +5,10 @@ new vm.Script(src);
 class V {constructor(x=0,y=0,z=0){Object.assign(this,{x,y,z});}set(x,y,z){Object.assign(this,{x,y,z});return this;}addScalar(n){this.x+=n;this.y+=n;this.z+=n;}lerp(){}}
 let objectId=0;
 class Obj {constructor(geometry,material){this.material=material;this.id=++objectId;this.position=new V;this.rotation=new V;this.scale=new V(1,1,1);this.children=[];this.userData={};}add(...x){this.children.push(...x);}setAttribute(){}setIndex(){}computeVertexNormals(){}lookAt(){}setSize(){}render(){}updateProjectionMatrix(){} }
-const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
-const els={};const element=()=>({style:{},classList:{values:new Set(),add(v){this.values.add(v);},remove(v){this.values.delete(v);},contains(v){return this.values.has(v);}},appendChild(){},addEventListener(){},width:330,height:330,getContext:()=>({clearRect(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},stroke(){},arc(){},fill(){}})});
-const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document:{getElementById:id=>els[id]??=element(),createElement:element,querySelector:()=>element(),querySelectorAll:()=>[]},window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(fn){(ctx.pending??=[]).push(fn);},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
-vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};this.domElement=document.createElement("canvas");}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
+const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
+const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(fn){(ctx.pending??=[]).push(fn);},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
+vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/dialogs',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 vm.runInContext(`
 function ensure(value,message){if(!value)throw Error(message);}
 for(let seed=0;seed<100;seed++){
@@ -58,7 +58,7 @@ checkAnswer(currentChallenge.answer,button());ensure(gameState==='PREDATOR_TRANS
 while(ctx.pending?.length)ctx.pending.shift()();
 vm.runInContext(`
 ensure(gameState==='PREDATOR_CHALLENGE'&&predatorTimeLeft===30&&mazeEncounterMistakes===2,'Second question reset errors or time');
-checkAnswer(currentChallenge.answer,{disabled:false,classList:{add(){}}});
+checkAnswer(currentChallenge.answer,{disabled:false,classList:{add(){},remove(){}}});
 `,ctx);
 while(ctx.pending?.length)ctx.pending.shift()();
 vm.runInContext(`
