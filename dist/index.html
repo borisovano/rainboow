@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מסע מתמטי — הירח ועולם הקשת</title>
+    <title>מסע מתמטי — הירח, הקשת והמבוך</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -53,6 +53,20 @@
         #breathing-card.active .breathing-child { animation: gentle-breath 5s ease-in-out; }
         @keyframes gentle-breath { 0%, 100% { transform: scale(.96); } 50% { transform: scale(1); } }
         @media (prefers-reduced-motion: reduce) { #breathing-card.active .breathing-child { animation: none; } }
+        #maze-hud { display:none; position:absolute; top:72px; right:16px; max-width:340px; padding:12px; background:rgba(247,246,227,.95); border:2px solid #91b5a6; border-radius:16px; color:#254e48; pointer-events:auto; }
+        #maze-hud.active { display:block; }
+        #maze-progress { font-weight:900; font-size:20px; }
+        #maze-message { font-size:14px; margin:5px 0; }
+        #maze-passive { font-size:12px; color:#695283; }
+        #maze-buttons { display:flex; flex-wrap:wrap; gap:5px; max-height:160px; overflow:auto; }
+        #maze-buttons button { border:1px solid #85a698; background:#fffdf2; border-radius:8px; padding:6px 8px; cursor:pointer; font-weight:bold; }
+        #maze-buttons button:disabled { opacity:.5; cursor:default; }
+        #maze-map-panel { display:none; position:absolute; top:16px; left:16px; width:min(40vw,310px); padding:10px; border-radius:14px; background:#f7f3df; color:#235c59; pointer-events:none; box-shadow:0 5px 24px #0003; }
+        #maze-map-panel.active { display:block; }
+        #maze-map-canvas { width:100%; height:auto; }
+        #maze-map-time { font-weight:bold; font-size:14px; }
+        #maze-map-panel p { font-size:12px; margin:4px 0 0; }
+        @media(max-width:600px) { #maze-hud { top:65px; right:8px; max-width:52vw; padding:8px; } #maze-progress { font-size:16px; } #maze-message { font-size:12px; } #maze-buttons { max-height:105px; } #maze-map-panel { left:6px; padding:6px; } }
     </style>
 </head>
 <body>
@@ -83,6 +97,15 @@
                 שער החלל נפתח! 🚀
             </div>
         </div>
+        <div id="maze-hud"><div id="maze-progress"></div><p id="maze-message"></p><p id="maze-passive"></p><div id="maze-buttons">
+            <button id="maze-hammer" onclick="useMazePower('hammer')">שובר קיר B</button>
+            <button id="maze-map" onclick="useMazePower('map')">מפת זיכרון M</button>
+            <button id="maze-echo" onclick="useMazePower('echo')">הד חברים E</button>
+            <button id="maze-freeze" onclick="useMazePower('freeze')">שעון אבן F</button>
+            <button id="maze-anchor" onclick="useMazePower('anchor')">חוט חזרה T</button>
+            <button id="maze-lantern" onclick="useMazePower('lantern')">פנס סודות L</button>
+        </div></div>
+        <div id="maze-map-panel"><div id="maze-map-time"></div><canvas id="maze-map-canvas" width="330" height="330" aria-label="מפת המבוך עם חיצים ליציאה"></canvas><p>סגול: אתם · ורוד: חברים · זהב: יציאה<br>זכרו את הפניות — המפה תיעלם.</p></div>
         <div id="controls">
             <div class="control-btn" id="btn-right">◀️</div>
             <div class="control-btn" id="btn-action">⏫</div>
@@ -135,6 +158,11 @@
         </div>
     </div>
 
+    <div id="maze-win" class="modal-overlay"><div class="modal-content interactive-ui">
+        <h2 class="text-3xl font-black text-green-700">מצאתם את הדרך החוצה! 🏆</h2>
+        <p id="maze-win-score" class="my-6 text-xl"></p>
+        <button class="btn" onclick="mazeContinueExploring()">ממשיכים לחפש סודות</button>
+    </div></div>
     <!-- Game Over Modal -->
     <div id="game-over-modal" class="modal-overlay">
         <div class="modal-content interactive-ui">
@@ -145,6 +173,7 @@
     </div>
 </div>
 
+<script src="maze.js"></script>
 <script>
     const synth = new Tone.PolySynth(Tone.Synth).toDestination();
     synth.volume.value = -5;
@@ -440,6 +469,7 @@
 
     function resetRealmPowers(realm) {
         currentRealm = realm;
+        if(realm!=='maze'){document.getElementById('maze-hud').classList.remove('active');document.getElementById('maze-map-panel').classList.remove('active');}
         for(const key of rainbowPowerKeys)rainbowPowers[key]=false;
         for(const key of Object.keys(rainbowTimers))rainbowTimers[key]=0;
         monsterRig.visible=true;bodyMat.transparent=false;bodyMat.opacity=1;refreshRainbowPowers();
@@ -697,6 +727,7 @@
             gold.position.y=2.7;chest.add(gold);
         });
         createStormClouds();
+        createMazePortal();
         for(let i=0;i<20;i++) {
             const p=rainbowPoint(.12+i*.15,i%2?333:227);
             const crystal=new THREE.Mesh(new THREE.OctahedronGeometry(2.5),new THREE.MeshLambertMaterial({color:RAINBOW_COLORS[i%7],emissive:0x182030}));
@@ -884,6 +915,7 @@
 
     window.addEventListener('keydown', (e) => {
         if(gameState !== 'PLAYING') { moonShortcut = ''; return; }
+        if(currentRealm==='maze'&&!e.repeat){const power={KeyB:'hammer',KeyM:'map',KeyE:'echo',KeyF:'freeze',KeyT:'anchor',KeyL:'lantern'}[e.code];if(power){useMazePower(power);return;}}
         if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
             const now = Date.now();
             if (now - moonShortcutTime > 2000) moonShortcut = '';
@@ -928,6 +960,7 @@
         await Tone.start();
         document.getElementById('start-modal').classList.remove('active');
         gameState = 'PLAYING';
+        if(new URLSearchParams(window.location.search).get('stage')==='maze')enterMaze();
     };
     
     window.continueFromPowerup = function() {
@@ -937,7 +970,7 @@
 
     function jump() {
         if (!isJumping && gameState === 'PLAYING') {
-            const moon = playerGroup.position.z <= MOON_ENTRY && currentRealm!=='rainbow';
+            const moon = playerGroup.position.z <= MOON_ENTRY && currentRealm!=='rainbow' && currentRealm!=='maze';
             playerVelocityY = currentRealm==='rainbow' ? (powerups.superJump?1.1:.65) : moon ? (powerups.superJump ? 0.95 : 0.48) : (powerups.superJump ? 6.0 : 0.6);
             isJumping = true;
             playJumpSound();
@@ -982,11 +1015,11 @@
         };
         
         if (obstacle.userData.type === 'bridge_gate') currentChallenge = makeBridgeChallenge(selectedGrade);
-        if (obstacle.userData.realm === 'rainbow') currentChallenge = makeRainbowChallenge(obstacle.userData.kind,selectedGrade);
+        if (obstacle.userData.realm === 'rainbow' || obstacle.userData.realm === 'maze') currentChallenge = makeRainbowChallenge(obstacle.userData.kind,selectedGrade);
         document.getElementById('predator-timer').classList.add('hidden');
         document.getElementById('challenge-story').textContent = obstacle.userData.name;
         document.getElementById('math-problem').innerHTML = `<span dir="ltr">${currentChallenge.text}</span>`;
-        document.getElementById('challenge-hint').textContent = obstacle.userData.realm==='rainbow' ? 'פתרו כדי להתקדם בקשת. אין הגבלת זמן ואפשר לנסות שוב.' : obstacle.userData.type === 'bridge_gate' ? 'פתרו כדי לפתוח את השער. אפשר לנסות שוב ללא הגבלת זמן.' : '';
+        document.getElementById('challenge-hint').textContent = obstacle.userData.realm==='maze' ? 'פתרו כדי להתקדם במבוך. אפשר לנסות שוב ללא הגבלת זמן.' : obstacle.userData.realm==='rainbow' ? 'פתרו כדי להתקדם בקשת. אין הגבלת זמן ואפשר לנסות שוב.' : obstacle.userData.type === 'bridge_gate' ? 'פתרו כדי לפתוח את השער. אפשר לנסות שוב ללא הגבלת זמן.' : '';
         
         const container = document.getElementById('answers-container');
         container.innerHTML = '';
@@ -1002,7 +1035,7 @@
 
     function playerHitsPredator(pred) {
         const playerRadius = 1.2 * monsterRig.scale.x;
-        const enemyRadius = (pred.isCloud ? 3.2 : pred.isAsteroid ? 6 : 1.2) * pred.mesh.scale.x;
+        const enemyRadius = (pred.isMaze ? 1.7 : pred.isCloud ? 3.2 : pred.isAsteroid ? 6 : 1.2) * pred.mesh.scale.x;
         const playerCenterY = playerGroup.position.y + playerRadius;
         const enemyCenterY = pred.mesh.position.y + enemyRadius;
         const dx = playerGroup.position.x - pred.mesh.position.x;
@@ -1022,6 +1055,7 @@
             return;
         }
         
+        mazeQuestionsSolved=0;mazeEncounterMistakes=0;
         preparePredatorMathChallenge(predatorObj);
         gameState = 'BREATHING';
         breathingPredator = predatorObj;
@@ -1109,7 +1143,7 @@
             options: optionsArray.sort(() => Math.random() - 0.5) 
         };
         
-        document.getElementById('challenge-story').textContent = predatorObj.isCloud ? 'ענן סערה תפס אותך! פתרו כדי לפזר אותו!' : predatorObj.isAsteroid ? 'אסטרואיד מתקרב! פתרו כדי לנפץ אותו!' : 'אוי לא! טורף תפס אותך!';
+        document.getElementById('challenge-story').textContent = predatorObj.isMaze ? 'שומר אבן מתקרב! פתרו כדי לפתוח את הדרך.' : predatorObj.isCloud ? 'ענן סערה תפס אותך! פתרו כדי לפזר אותו!' : predatorObj.isAsteroid ? 'אסטרואיד מתקרב! פתרו כדי לנפץ אותו!' : 'אוי לא! טורף תפס אותך!';
         document.getElementById('math-problem').innerHTML = `<span dir="ltr">${currentChallenge.text}</span>`;
         
         const container = document.getElementById('answers-container');
@@ -1127,6 +1161,7 @@
         document.getElementById('challenge-hint').textContent = '';
         
         applyRainbowHint();
+        mazeGuardHint();
         document.getElementById('challenge-modal').classList.add('active');
     }
 
@@ -1136,6 +1171,7 @@
             predatorTimeLeft--;
             document.getElementById('predator-timer').textContent = predatorTimeLeft;
             if (predatorTimeLeft <= 0) {
+                if(mazeGuardTimeout())return;
                 clearInterval(predatorInterval);
                 initiatePlayerDeath(); 
             }
@@ -1147,6 +1183,7 @@
     function checkAnswer(selected, btn) {
         if (gameState !== 'CHALLENGE' && gameState !== 'PREDATOR_CHALLENGE') return;
         if (btn.disabled) return;
+        if(checkMazeGuardAnswer(selected,btn))return;
         if (selected === currentChallenge.answer) {
             document.querySelectorAll('.answer-btn').forEach(button => button.disabled = true);
             btn.classList.add('correct');
@@ -1218,6 +1255,8 @@
         activeObstacle.userData.cleared = true;
         activeObstacle.children.forEach(c => c.visible = false);
 
+        if(activeObstacle.userData.realm==='maze'){handleMazeSuccess(activeObstacle);return;}
+
         if (activeObstacle.userData.type === 'bridge_gate') {
             activeObstacle.userData.deck.visible = true;
             const opened = bridgeCheckpoints.filter(gate => gate.userData.cleared).length;
@@ -1231,7 +1270,7 @@
             return;
         }
         if(activeObstacle.userData.type === 'rainbow_chest') {
-            if(activeObstacle.userData.final){rainbowWorld.complete=true;document.getElementById('space-warning').textContent='כל הכבוד! הגעתם לזהב שבקצה הקשת! '+(rainbowPowers.bonus?100:50)+' 🏆';}
+            if(activeObstacle.userData.final){rainbowWorld.complete=true;document.getElementById('space-warning').textContent='שער המבוך נפתח! המשיכו לקצה הקשת והיכנסו בשער הירוק 🧩';}
             else document.getElementById('space-warning').textContent='תיבת הקשת נפתחה! +'+(rainbowPowers.bonus?30:15)+' מטבעות 🪙';
             return;
         }
@@ -1375,6 +1414,7 @@
     function animate() {
         requestAnimationFrame(animate);
         const elapsed = clock.getDelta();
+        updateMazeRealtime(elapsed);
         if (gameState === 'BREATHING') {
             updateBreathingPause(elapsed);
             accumulator = 0;
@@ -1412,6 +1452,9 @@
             }
         }
         else if (gameState === 'PLAYING') {
+            if(currentRealm==='maze'){stepMaze(delta,time);return;}
+            updateMazePortal(time);
+            if(currentRealm==='maze'||gameState!=='PLAYING')return;
             updateRainbowPowers(delta);
             const wasOnIsland = !isJumping && (supportingMoonPlatform(playerGroup.position.x,playerGroup.position.z,playerGroup.position.y) || (rainbowSurfaceAt(playerGroup.position.x,playerGroup.position.z)!==null && playerGroup.position.y>=rainbowSurfaceAt(playerGroup.position.x,playerGroup.position.z)-.8));
             let moveX = 0, moveZ = 0;
