@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');
-const {createDialog,createRegistry}=require('../dist/dialogs/math-dialog.js');
-const {createDocument}=require('./helpers/dom.cjs');
+const {createDialog,createRegistry}=require('../math-dialog.js');
+const {createDocument}=require('../../helpers/testing/dom.cjs');
 const registry=createRegistry().register('base',{theme:{'--md-accent':'blue'},groups:['a']}).register('child',{extends:'base',theme:{'--md-ink':'navy'},groups:['a','b']});
 assert.equal(registry.resolve('child').theme['--md-accent'],'blue');assert.equal(registry.list({group:'b'}).length,1);assert.throws(()=>registry.register('base',{}));
 registry.register('cycle',{extends:'cycle'});assert.throws(()=>registry.resolve('cycle'),/Circular/);

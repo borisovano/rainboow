@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "arithmetic",
+  "title": "אתגר חשבון",
+  "entry": "index.html",
+  "subject": "mathematics",
+  "language": "he-IL",
+  "direction": "rtl",
+  "difficulty": {
+    "level": 1,
+    "scale": "adventure-drills-v1",
+    "description": "Single arithmetic question; operands and operation are explicit parameters, so this catalog level describes only the default 7 + 5 example."
+  },
+  "proficiency": {
+    "scheme": "adventure-numeracy-v1",
+    "value": "early-arithmetic",
+    "description": "Can read numbers and calculate the selected operation."
+  },
+  "skills": [
+    "addition",
+    "subtraction",
+    "multiplication"
+  ],
+  "gameLevels": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "groups": [
+    "math"
+  ],
+  "tags": [
+    "arithmetic",
+    "choice",
+    "typed-answer"
+  ],
+  "letters": [],
+  "capabilities": [],
+  "assessment": {
+    "methods": [
+      "answer"
+    ],
+    "success": "Answer the configured question correctly; retries allowed. An optional timer returns failure on expiry."
+  },
+  "parameters": {
+    "a": {
+      "type": "integer",
+      "default": 7,
+      "minimum": 0,
+      "maximum": 100,
+      "description": "First operand."
+    },
+    "b": {
+      "type": "integer",
+      "default": 5,
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Second operand."
+    },
+    "operation": {
+      "type": "string",
+      "default": "add",
+      "enum": [
+        "add",
+        "subtract",
+        "multiply"
+      ],
+      "description": "Operation to practice."
+    },
+    "answerMode": {
+      "type": "string",
+      "default": "choice",
+      "enum": [
+        "choice",
+        "typed"
+      ],
+      "description": "Multiple choice or number entry."
+    },
+    "seconds": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 300,
+      "description": "Time limit; 0 means untimed."
+    }
+  },
+  "examples": [
+    {
+      "name": "Addition choices",
+      "params": {
+        "a": 7,
+        "b": 5
+      }
+    },
+    {
+      "name": "Type multiplication",
+      "params": {
+        "a": 6,
+        "b": 8,
+        "operation": "multiply",
+        "answerMode": "typed"
+      }
+    },
+    {
+      "name": "Five-second timer",
+      "params": {
+        "a": 3,
+        "b": 4,
+        "seconds": 5
+      }
+    }
+  ]
+}

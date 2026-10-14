@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>מילה בקול · מצילים חבר</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="stylesheet" href="style.css">
+<main>
+<header><span class="brand">מילה בקול <span aria-hidden="true">✦</span></span><span class="tag">קוראים ומשחררים חבר</span></header>
+<section class="intro"><h1>מסתכלים, קוראים, אומרים</h1><p>קוראים את המילה, לוחצים על המיקרופון ואומרים אותה בקול.</p></section>
+<nav class="filters" aria-label="אורך המילים"><button class="filter" data-length="all" aria-pressed="true">הכול</button><button class="filter" data-length="2" aria-pressed="false">2 אותיות</button><button class="filter" data-length="3" aria-pressed="false">3 אותיות</button></nav>
+<section class="card" aria-label="תרגול קריאה">
+<div class="meta" id="meta"></div><div class="word" id="word"></div><div class="letters" id="letters" aria-label="אותיות המילה"></div><div class="letter-tip">לחצו על אות כדי לשמוע אותה 🔊</div>
+<button class="mic" id="mic"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0014 0v-2M12 19v3M8 22h8"/></svg><span id="mic-label">לוחצים ואומרים</span></button>
+<p><button id="return-to-game" class="next" hidden>קראתי נכון — משחררים את החבר ✨</button></p>
+<div class="help-controls"><button id="hint-button">💡 רמז</button><button id="sound-button" aria-pressed="true" aria-label="צלילים פעילים">🔊 צלילים</button></div><div id="hint" class="hint" hidden aria-live="polite"></div>
+<div id="status" class="status" role="status" aria-live="polite"></div>
+<div class="streak-panel"><div id="streak" class="streak-count" role="status">רצף הצלחות: 0 מילים</div><div class="medals" aria-label="מדליות רצף"><div class="medal" id="medal-3"><span aria-hidden="true">🥉</span>3 ברצף</div><div class="medal" id="medal-5"><span aria-hidden="true">🥈</span>5 ברצף</div><div class="medal" id="medal-10"><span aria-hidden="true">🥇</span>10 ברצף</div></div><div id="reward" class="reward" role="status" aria-live="polite"></div></div><div class="footer"><span class="progress" id="progress">0 מילים שקראנו בהצלחה</span><button id="next" class="next">למילה הבאה ←</button></div>
+</section>
+<details><summary>להורים · עזרה והגדרות</summary><div id="adult-fallback"><p>אם המיקרופון אינו זמין או טעה בזיהוי, מבוגר יכול להקשיב ולאשר את הקריאה.</p><label><input id="adult-confirm" type="checkbox"> שמעתי את הילד/ה קורא/ת את המילה נכון</label> <button id="adult-submit">אישור מבוגר</button></div><div class="adult"><label for="choose">בחירת מילה</label><select id="choose"></select></div><small>האפליקציה אינה שומרת הקלטות או תוצאות. זיהוי הדיבור של הדפדפן עשוי להעביר קול לשירות חיצוני ולדרוש חיבור לאינטרנט. יש לאפשר שימוש במיקרופון.</small><small>זהו ניסוי בהתאמת מילה מזוהה למילה כתובה. הוא אינו בודק במדויק את הגיית הניקוד, ואפשר שזיהוי הדיבור יטעה. כדאי לנסות ב־Chrome. אם המילה נכונה אך לא זוהתה, אפשר לנסות שוב.</small></details>
+</main><div id="celebration" class="celebration" aria-hidden="true"></div><script src="../helpers/client.js"></script><script src="words.js"></script><script src="logic.js"></script><script src="app.js"></script>
+</html>

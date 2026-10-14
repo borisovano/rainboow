@@ -247,5 +247,64 @@
   "source": {
     "project": "hebrew-reading-lab",
     "adaptation": "Original HTML, styling, word bank and reading behavior retained; game completion bridge and adult fallback added."
-  }
+  },
+  "parameters": {
+    "wordIndex": {
+      "type": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Starting index within the filtered word bank; wraps around."
+    },
+    "wordLength": {
+      "type": "string",
+      "enum": [
+        "all",
+        "2",
+        "3"
+      ],
+      "default": "all",
+      "description": "Limit practice to two- or three-letter words."
+    },
+    "word": {
+      "type": "string",
+      "default": "",
+      "description": "Optional exact word (with or without niqqud). Must be in the filtered word bank.",
+      "maxLength": 40
+    },
+    "sound": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable optional success and retry sounds."
+    },
+    "allowAdultConfirmation": {
+      "type": "boolean",
+      "default": true,
+      "description": "Offer explicit adult confirmation when speech recognition is unavailable."
+    }
+  },
+  "examples": [
+    {
+      "name": "Two-letter word, quiet",
+      "params": {
+        "word": "דג",
+        "wordLength": "2",
+        "sound": false
+      }
+    },
+    {
+      "name": "Three-letter word",
+      "params": {
+        "word": "כלב",
+        "wordLength": "3"
+      }
+    },
+    {
+      "name": "Speech only",
+      "params": {
+        "word": "גן",
+        "allowAdultConfirmation": false
+      }
+    }
+  ]
 }

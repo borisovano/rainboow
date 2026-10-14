@@ -1,46 +1,34 @@
-# Contributing freestyle drills
+# Contributing drill modals
 
-A drill owns its HTML, CSS, JavaScript, interaction, and learning task. No slots, base class, or component framework is required. Use the existing Hebrew reading drill as a complete example.
+Drills are independent small websites in [`drill-modals/`](drill-modals/README.md), one folder per drill, alongside shared `helpers/` and `styles/`. Own your HTML, CSS and JavaScript; no framework, slots, or component inheritance is required.
 
-1. Add `dist/drills/<your-id>/index.html`, scripts/styles, and `drill.json`.
-2. Add `<your-id>/drill.json` to `dist/drills/catalog.json`.
-3. Include `../shared/client.js` in your HTML. Call `Drill.onStart(context => …)` for optional game context; call `Drill.complete({outcome:'success', method:'your-declared-method', itemId:'item-id'})` when the learner completes the task. `Drill.cancel()` closes without a reward.
-4. Register cleanup with `Drill.onDispose(() => …)`: stop speech, audio, timers, streams and outstanding work. The host also removes the frame on close.
-5. Run `npm test`, then use `/drills/` to try the drill and inspect/filter its metadata. Connect it to an encounter explicitly in the game; catalog registration alone does not change gameplay.
+## Add a drill
+
+1. Add `drill-modals/<your-id>/index.html`, `style.css`, `app.js`, `logic.js`, `drill.json`, and `tests/*.cjs`. Other file organizations inside your folder are fine.
+2. Register `<your-id>/drill.json` in `drill-modals/catalog.json`.
+3. Declare metadata, `parameters`, and named `examples` in the manifest. Include `../helpers/client.js` in the page and implement `Drill.onStart((params, context) => …)`.
+4. Emit `Drill.complete({outcome, method, itemId, attempts, details})` or `Drill.cancel()`. The host normalizes the output for the game. Register media/timer cleanup using `Drill.onDispose`.
+5. Run `npm run test:drill -- <your-id>`. Add unit tests for content/answer logic and UI tests for completion, failure/retry, cancellation and cleanup where relevant.
+6. Run `npm start`, then open `/drills/?drill=<your-id>`. Change the JSON inputs and inspect the output. Include a runner link or example parameters in your contribution.
+7. Run `npm test` and `npm run build`. Registering a drill makes it available to the runner; connect game encounters explicitly.
+
+The [drill README](drill-modals/README.md) defines the input/output API, URL parameters, test commands, and example payloads. [Hebrew reading](drill-modals/hebrew-reading/README.md) and [arithmetic](drill-modals/arithmetic/README.md) are real working examples.
 
 ## Metadata
 
-See [the actual Hebrew manifest](dist/drills/hebrew-reading/drill.json) and [the validator](dist/drills/shared/metadata.js).
+Use [the Hebrew manifest](drill-modals/hebrew-reading/drill.json) as an example. Declare `subject`, BCP 47 `language`, `direction`, `skills`, actual `letters`, and optional `tags`/`groups` arrays. `difficulty` needs a numeric level within a named scale and a concrete explanation. `proficiency` needs a named rubric and prerequisites. `gameLevels` is separate from learning difficulty. Additional metadata is welcome; group names are unrestricted.
 
-| Field | Meaning |
-| --- | --- |
-| `schemaVersion`, `id`, `title`, `entry` | Contract version, unique slug, visible title, local HTML entry |
-| `subject`, `language`, `direction` | Learning subject, BCP 47 language such as `he-IL`, RTL/LTR |
-| `difficulty` | Numeric level **within a named scale**, plus a concrete explanation |
-| `proficiency` | Named rubric, proficiency value, and explanation of prerequisites |
-| `skills`, `letters` | Specific skills and letters actually covered, including final forms |
-| `content` | Drill-specific details: word bank, lengths, niqqud, etc. Free to extend |
-| `gameLevels` | Where the game may use the drill; separate from learning difficulty |
-| `tags`, `groups` | Optional membership in any number of groups; arbitrary strings, no fixed hierarchy |
-| `capabilities` | Browser features requested: currently microphone and speech synthesis |
-| `assessment` | Accepted result methods and an honest description of success |
+Declare browser `capabilities`, result methods in `assessment`, and honest success criteria. Do not label transcript matching as pronunciation assessment. The Hebrew word/letter inventory is tested against the actual content. Keep declared examples valid and covered by your tests.
 
-Keep `tags` and `groups` as empty arrays if unused. Additional metadata is welcome. Letter lists and word lengths in the Hebrew example are checked against its real word bank by tests. Its proficiency is a descriptive local early-literacy rubric, not CEFR or a school-grade equivalence. Do not label transcript matching as pronunciation assessment.
+## Small HTML/CSS/JS guardrails
 
-## Small guardrails
-
-- Use responsive HTML, visible keyboard focus, labeled controls, the right `lang`/`dir`, reduced-motion support, and feedback that does not rely only on color.
-- Each drill runs in its own iframe, so styles and IDs cannot accidentally change the game. The outer dialog supplies a consistent border, backdrop, close button and keyboard dismissal. Inside, use whatever layout fits the exercise.
-- Keep scripts/assets local, avoid inline JavaScript, `eval`, trackers, and new remote dependencies. The example's CSP allows local scripts, local/inline styles and local images; network fetches and form submissions are blocked. Browser-provided speech services may still use a remote service.
-- Request microphone access only after a user clicks. Provide a clear retry/cancel path if it fails. The Hebrew example also offers explicit adult confirmation; that method is reported separately from speech recognition.
-- Use the bridge, not `parent.document` or game globals. Never mutate scores, friends, or powers. The host validates message source, origin, session, declared assessment method and one-time completion. The game grants the reward.
-- Review contributed JavaScript before merging. Frames use `allow-scripts allow-same-origin` for browser speech support; this isolates layout but **is not a security boundary for hostile code**. Arbitrary uploaded code is not supported.
-- Keep recordings and transcripts out of completion messages. Send only a stable item ID and result method. This example stores no recordings or results.
-
-## Existing math dialogs
-
-The arithmetic UI lives in `dist/dialogs/` and remains available as an optional implementation. Its reusable parts are not the contribution contract. A new drill can ignore it entirely, just as Hebrew reading does.
+- Use responsive HTML, correct `lang`/`dir`, labeled controls, visible keyboard focus, reduced-motion support, and feedback that does not depend only on color.
+- Each drill gets an iframe to isolate styles and IDs. Shared `styles/host.css` supplies the outer dialog, backdrop and close button. All inner layout is yours.
+- Keep scripts/assets local, avoid inline JavaScript, `eval`, trackers, and undeclared remote dependencies. Copy an example's CSP. The host's result messages never accept game scores or powers.
+- Request microphone access only on a user click. Allow retries and closing when it fails. Keep recordings and transcripts out of outputs; use stable content IDs and result methods instead.
+- Use the bridge, not `parent.document` or game globals. Stop media/timers when disposed. The host validates source, origin, session and one-time completion, and removes the frame on close.
+- Review contributed JavaScript before merging. Frames use `allow-scripts allow-same-origin allow-forms` for browser speech and local form controls; the example CSP blocks network form submissions; this isolates layout but is not a security boundary for hostile code. Arbitrary uploaded code is not supported.
 
 ## Review checklist
 
-Try success, a wrong answer, retry, cancel, reopening, denied microphone, and a narrow viewport. Verify that a friend is rewarded once, that cancellation leaves it available, and that no media continues after closing. Run the automated suite. Real microphone/transcription behavior needs a manual check in a supported browser; the test suite does not simulate speech accuracy.
+Run the drill's own tests, the whole suite, and the build. Manually try configured inputs, success, a wrong answer, retry, cancellation, reopening, missing browser capabilities, and a narrow viewport. Check the output JSON and verify that the game grants a reward once. Browser speech accuracy requires real manual testing and is not established by mocked recognition tests.

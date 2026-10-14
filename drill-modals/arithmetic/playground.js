@@ -1,7 +1,7 @@
 (function(){
   const registry=MathDialogPresets.register(MathDialogs.createRegistry());
   NumberEntryDialog.register(registry);
-  registry.register('breathing',{extends:'timed',name:'Pause, then solve',groups:['timed','wellbeing'],cover:{image:'../assets/breathing-child.png'}});
+  registry.register('breathing',{extends:'timed',name:'Pause, then solve',groups:['timed','wellbeing'],cover:{image:'../../assets/breathing-child.png'}});
   registry.register('composed',{extends:'practice',name:'A different composition',groups:['examples'],layout(ctx,sections){
     const box=ctx.node('section');
     for(const name of ['header','problem','answers','hint','timer','footer'])if(sections[name])box.appendChild(sections[name]);

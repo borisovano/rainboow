@@ -2,10 +2,14 @@
   "name": "moon-rainbow-math-adventure",
   "version": "0.1.0",
   "private": true,
-  "description": "A Hebrew math adventure with Earth, Moon, Rainbow and Maze worlds, and reusable math dialogs.",
+  "description": "A learning adventure with independently testable HTML/JS drill modals.",
   "scripts": {
     "start": "node scripts/serve.cjs",
-    "test": "node scripts/test.cjs"
+    "test": "node scripts/test.cjs",
+    "build": "node scripts/build.cjs",
+    "test:drill": "node scripts/test.cjs --drill"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

@@ -1,19 +1,22 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
-const {validate,matches}=require('../dist/drills/shared/metadata.js');
-const base=path.join(__dirname,'../dist/drills');
+const {validate,matches}=require('../drill-modals/helpers/metadata.js');
+const base=path.join(__dirname,'../drill-modals');
 const catalog=JSON.parse(fs.readFileSync(path.join(base,'catalog.json')));
+const contract=require('../drill-modals/helpers/contract.js');
 const ids=new Set();
 for(const file of catalog){
  const m=validate(JSON.parse(fs.readFileSync(path.join(base,file))));assert(!ids.has(m.id));ids.add(m.id);
+ contract.parameters(m);for(const example of m.examples||[])contract.parameters(m,example.params);
+ assert(fs.existsSync(path.join(base,m.id,'tests')),'Each drill needs colocated tests');
  const folder=path.dirname(path.join(base,file));assert(fs.existsSync(path.join(folder,m.entry)));
  const html=fs.readFileSync(path.join(folder,m.entry),'utf8');
- assert(html.includes('shared/client.js'));assert(html.includes('Content-Security-Policy'));
+ assert(html.includes('helpers/client.js'));assert(html.includes('Content-Security-Policy'));
  assert(!/<script(?![^>]*\bsrc=)[^>]*>\s*\S/i.test(html),'Use local external scripts');
  assert(!/\son\w+\s*=/i.test(html),'Avoid inline event handlers');
  assert(!/<script[^>]+src=["']https?:/i.test(html),'No remote scripts in drills');
 }
 const m=JSON.parse(fs.readFileSync(path.join(base,'hebrew-reading/drill.json')));
-const words=require('../dist/drills/hebrew-reading/words.js');
+const words=require('../drill-modals/hebrew-reading/words.js');
 const bare=w=>w.normalize('NFD').replace(/[^\u05d0-\u05ea]/g,'');
 assert.deepEqual(m.content.items.map(i=>i.word),words);
 assert.deepEqual(m.letters,[...new Set(words.map(bare).join(''))].sort());

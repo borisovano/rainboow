@@ -1,9 +1,9 @@
 const WORDS = HebrewWords;
-function normalize(value) { return value.normalize('NFD').replace(/[\u0591-\u05C7]/g, '').replace(/[^\u05D0-\u05EA\s]/g, '').trim().replace(/\s+/g, ' '); }
+const normalize = HebrewReading.normalize;
 const el = id => document.getElementById(id);
 let pool = WORDS, index = 0, active = null, timeout = null, successResult=null;
 const completed = new Set();
-let streak = 0, wordSolved = false, celebrationTimer;
+let streak = 0, wordSolved = false, celebrationTimer, attempts=0, hintsUsed=0;
 const earnedMedals = new Set();
 function updateStreak() {
   el('streak').textContent = `רצף הצלחות: ${streak} מילים`;
@@ -100,6 +100,7 @@ function playSound(success) {
   } catch { /* No sound device must not affect the answer. */ }
 }
 function showHint(picture = false) {
+  hintsUsed++;
   const [icon, clue] = HINTS[normalize(pool[index])];
   el('hint').hidden = false; el('hint').replaceChildren();
   if (picture) {
@@ -138,7 +139,7 @@ function setBusy(busy) {
 }
 function render() {
   window.speechSynthesis?.cancel();
-  successResult=null;wordSolved = false; el('reward').textContent = '';
+  attempts=0;hintsUsed=0;successResult=null;wordSolved = false; el('reward').textContent = '';
   el('return-to-game').hidden = true; el('adult-confirm').checked = false;
   misses = 0; el('hint').hidden = true; el('hint').replaceChildren();
   const word = pool[index]; el('word').textContent = word;
@@ -167,7 +168,8 @@ el('mic').onclick = () => {
     const transcript = event.results[event.resultIndex][0].transcript;
     resolved = true;
     if (!normalize(transcript)) { status('לא זוהתה מילה בעברית. ננסה שוב?', 'retry'); }
-    else if (normalize(transcript) === normalize(target)) {
+    else if (HebrewReading.matches(transcript,target)) {
+      attempts++;
       completed.add(normalize(target)); el('progress').textContent = `${completed.size} מילים שקראנו בהצלחה`;
       if (!wordSolved) {
         wordSolved = true; streak++;
@@ -179,7 +181,7 @@ el('mic').onclick = () => {
       status('✓ נכון! כל הכבוד!', 'success', transcript); playSound(true);
       readingSucceeded('speech-transcript', target);
     } else {
-      retryTranscript = transcript;
+      attempts++;retryTranscript = transcript;
       misses++; streak = 0; updateStreak(); el('reward').textContent = 'מתחילים רצף חדש — המדליות שהרווחתם נשארות!'; playSound(false);
       status(misses >= 2 ? '↻ זו לא המילה שעל המסך. ננסה שוב עם התמונה!' : '↻ זו לא המילה שעל המסך. ננסה שוב!', 'retry', transcript);
       if (misses >= 2) showHint(true);
@@ -231,16 +233,23 @@ function stopMedia(){
   if(audio){audio.close().catch(()=>{});audio=null;}
 }
 function readingSucceeded(method,word){
-  successResult={outcome:'success',method,itemId:normalize(word)};
+  successResult={outcome:'success',method,itemId:normalize(word),attempts,details:{wordLength:normalize(word).length,hintsUsed}};
   el('return-to-game').hidden=false;
 }
 el('return-to-game').onclick=()=>{if(successResult)Drill.complete(successResult);};
 el('adult-submit').onclick=()=>{
   if(!el('adult-confirm').checked)return;
-  stopMedia();wordSolved=true;readingSucceeded('adult-confirmed',pool[index]);
+  attempts++;stopMedia();wordSolved=true;readingSucceeded('adult-confirmed',pool[index]);
   status('הקריאה אושרה. אפשר לשחרר את החבר!', 'success');
 };
-Drill.onStart(context=>{
-  pool=WORDS;index=Number.isInteger(context.wordIndex)?Math.abs(context.wordIndex)%pool.length:0;render();
+Drill.onStart(params=>{
+  const selected=HebrewReading.plan(WORDS,params);pool=selected.pool;index=selected.index;
+  soundEnabled=params.sound??true;
+  el('sound-button').setAttribute('aria-pressed',String(soundEnabled));
+  el('sound-button').setAttribute('aria-label',soundEnabled?'צלילים פעילים':'צלילים כבויים');
+  el('sound-button').textContent=soundEnabled?'🔊 צלילים':'🔇 צלילים';
+  el('adult-fallback').hidden=params.allowAdultConfirmation===false;
+  document.querySelectorAll('.filter').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.length===(params.wordLength??'all'))));
+  render();
 });
 Drill.onDispose(stopMedia);

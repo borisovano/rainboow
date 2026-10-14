@@ -8,7 +8,7 @@ class Obj {constructor(geometry,material){this.material=material;this.id=++objec
 const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};this.domElement=document.createElement("canvas");}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
 const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
 const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(){},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
-let opened;ctx.DrillHost={open(id,options){opened={id,...options};return Promise.resolve();}};vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/dialogs',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+let opened;ctx.DrillHost={open(id,options){opened={id,...options};return Promise.resolve();}};vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/arithmetic',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 vm.runInContext(`
 const friend=interactables.find(o=>o.userData.type==='npc_gate'&&!o.userData.realm);
 if(!friend)throw Error('Missing Earth friend');
@@ -16,7 +16,7 @@ gameState='PLAYING';keys.up=true;const beforeScore=score;
 triggerChallenge(friend);
 if(gameState!=='CHALLENGE'||currentChallenge!==null||keys.up)throw Error('Did not pause for reading');
 `,ctx);
-assert.equal(opened.id,'hebrew-reading');assert.equal(opened.context.gameLevel,1);
+assert.equal(opened.id,'hebrew-reading');assert.equal(opened.context.gameLevel,1);assert.equal(opened.params.wordIndex,0);
 opened.onCancel();
 vm.runInContext(`if(gameState!=='PLAYING'||friend.userData.cleared||score!==beforeScore)throw Error('Cancellation granted reward');simulationTime+=4;triggerChallenge(friend);`,ctx);
 opened.onComplete();opened.onComplete();

@@ -1,18 +1,18 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {createDocument}=require('./helpers/dom.cjs');
-const manifest=require('../dist/drills/hebrew-reading/drill.json');
-const document=createDocument();document.currentScript={src:'http://test/drills/host.js'};
+const manifest=require('../drill-modals/hebrew-reading/drill.json');
+const document=createDocument();document.currentScript={src:'http://test/drills/helpers/host.js'};
 const create=document.createElement;
 document.createElement=tag=>{const el=create(tag);el.append=(...nodes)=>nodes.forEach(n=>el.appendChild(n));el.showModal=()=>{el.open=true;};el.close=()=>{el.open=false;};if(tag==='iframe')el.contentWindow={postMessage(message){el.message=message;}};return el;};
 const window={addEventListener:(...args)=>document.addEventListener(...args),removeEventListener:(...args)=>document.removeEventListener(...args)};
-const ctx={document,window,location:{origin:'http://test'},URL,crypto:{randomUUID:()=>String(Math.random())},setTimeout:()=>1,clearTimeout(){},fetch:async url=>({ok:true,json:async()=>url.pathname.endsWith('catalog.json')?['hebrew-reading/drill.json']:manifest}),DrillMetadata:require('../dist/drills/shared/metadata.js')};
-vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../dist/drills/host.js'),'utf8'),ctx);
+const ctx={document,window,location:{origin:'http://test'},URL,AbortController,DrillContract:require('../drill-modals/helpers/contract.js'),crypto:{randomUUID:()=>String(Math.random())},setTimeout:()=>1,clearTimeout(){},fetch:async url=>({ok:true,json:async()=>url.pathname.endsWith('catalog.json')?['hebrew-reading/drill.json']:manifest}),DrillMetadata:require('../drill-modals/helpers/metadata.js')};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../drill-modals/helpers/host.js'),'utf8'),ctx);
 (async()=>{
  let complete=0,cancel=0,result;
  const handle=await ctx.DrillHost.open('hebrew-reading',{onComplete:r=>{complete++;result=r;},onCancel:()=>cancel++});
  await assert.rejects(ctx.DrillHost.open('hebrew-reading'),/already open/);
- const frame=document.querySelector('iframe');frame.onload();
- const session=frame.message.session;
+ const frame=document.querySelector('iframe');assert(frame.getAttribute('sandbox').includes('allow-forms'));frame.onload();
+ const session=frame.message.session;assert.equal(frame.message.params.wordIndex,0);assert.equal(frame.message.params.sound,true);
  const message={channel:'adventure-drill-v1',session,type:'complete',result:{outcome:'success',method:'speech-transcript',itemId:'דג',score:10000}};
  const send=(data,source=frame.contentWindow,origin='http://test')=>document.emit('message',{data,source,origin});
  send(message);assert.equal(complete,0,'must handshake first');
@@ -20,8 +20,9 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../dist/d
  send(message,{},'http://test');send(message,frame.contentWindow,'http://evil');send({...message,session:'stale'});send({...message,result:{...message.result,method:'invented'}});assert.equal(complete,0);
  send(message);send(message);assert.equal(complete,1);assert.equal(result.score,undefined);assert.equal(document.querySelector('iframe'),null);
  handle.close();assert.equal(cancel,0);
- const second=await ctx.DrillHost.open('hebrew-reading',{onCancel:()=>cancel++});second.close();second.close();assert.equal(cancel,1);
+ let cancelled;const second=await ctx.DrillHost.open('hebrew-reading',{onResult:r=>cancelled=r,onCancel:()=>cancel++});second.close();second.close();assert.equal(cancel,1);assert.equal(cancelled.outcome,'cancelled');assert.equal(cancelled.reason,'host-cancelled');
  await assert.rejects(ctx.DrillHost.open('missing'),/Unknown drill/);
+ let failure;await assert.rejects(ctx.DrillHost.open('hebrew-reading',{params:{sound:'invalid'},onResult:r=>failure=r}),/boolean/);assert.equal(failure.outcome,'error');assert.equal(document.querySelector('iframe'),null);
  const third=await ctx.DrillHost.open('hebrew-reading');third.close();
  console.log('PASS: host handshake, origin/source/session checks, declared results, one completion, cancellation, frame removal and reopening.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

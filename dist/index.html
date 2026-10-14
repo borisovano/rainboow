@@ -8,8 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <link rel="stylesheet" href="dialogs/math-dialog.css">
-    <link rel="stylesheet" href="drills/host.css">
+    <link rel="stylesheet" href="drills/styles/math-dialog.css">
+    <link rel="stylesheet" href="drills/styles/host.css">
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Heebo', sans-serif; background-color: #87CEEB; touch-action: none; user-select: none; transition: background-color 2s; }
         #game-container { position: relative; width: 100vw; height: 100vh; }
@@ -139,11 +139,12 @@
     </div>
 </div>
 
-<script src="dialogs/math-dialog.js"></script>
-<script src="dialogs/presets.js"></script>
-<script src="dialogs/examples/number-entry.js"></script>
-<script src="drills/shared/metadata.js"></script>
-<script src="drills/host.js"></script>
+<script src="drills/arithmetic/math-dialog.js"></script>
+<script src="drills/arithmetic/presets.js"></script>
+<script src="drills/arithmetic/examples/number-entry.js"></script>
+<script src="drills/helpers/metadata.js"></script>
+<script src="drills/helpers/contract.js"></script>
+<script src="drills/helpers/host.js"></script>
 <script src="maze.js"></script>
 <script>
     const dialogRegistry = MathDialogPresets.register(MathDialogs.createRegistry());
@@ -1022,7 +1023,7 @@
             if(message){document.getElementById('space-warning').classList.remove('hidden');document.getElementById('space-warning').textContent=message;}
         }
         DrillHost.open('hebrew-reading',{
-            context:{gameLevel:1,wordIndex:friendsRescued},
+            params:{wordIndex:friendsRescued},context:{gameLevel:1},
             onComplete(){if(gameState==='CHALLENGE'&&activeObstacle===obstacle&&!obstacle.userData.cleared){playSuccessSound();handleSuccess();}},
             onCancel:()=>cancel()
         }).catch(()=>cancel('לא הצלחנו לטעון את תרגול הקריאה. אפשר לגשת לחבר ולנסות שוב.'));

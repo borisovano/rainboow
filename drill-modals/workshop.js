@@ -15,8 +15,8 @@
         const title=document.createElement('h2');title.textContent=m.title;title.lang=m.language;
         const description=document.createElement('p');description.textContent=m.difficulty.description;
         const tags=document.createElement('p');tags.className='tags';tags.textContent=`${m.language} · level ${m.difficulty.level} · ${m.proficiency.value} · ${m.groups.join(' / ')}`;
-        const button=document.createElement('button');button.className='launch';button.textContent='Try Hebrew reading';
-        button.onclick=async()=>{button.disabled=true;try{await DrillHost.open(m.id,{context:{gameLevel:1,wordIndex:0},onComplete:r=>{status.textContent=`Completed: ${r.itemId} (${r.method}). In the game, this rescues the friend.`;button.focus();},onCancel:()=>{status.textContent='Closed without completing. The friend stays available.';button.focus();}});}catch{status.textContent='Could not open the drill. Please retry.';}finally{button.disabled=false;}};
+        const button=document.createElement('button');button.className='launch';button.textContent='Open in runner';
+        button.onclick=()=>{location.href='./?drill='+encodeURIComponent(m.id);};
         const details=document.createElement('details'),summary=document.createElement('summary'),pre=document.createElement('pre');summary.textContent='View metadata';pre.style.whiteSpace='pre-wrap';pre.style.overflowWrap='anywhere';pre.textContent=JSON.stringify(m,null,2);details.append(summary,pre);
         card.append(title,description,tags,button,details);list.appendChild(card);
       }
