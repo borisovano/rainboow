@@ -83,7 +83,7 @@ function createMazeWorld(){
     const route=layout.route(0,layout.exit);
     for(let i=0;i<8;i++){
         const id=route[Math.max(2,Math.floor((i+1)*.105*(route.length-1)))],p=mazePoint(id);
-        const gate=createObstacle(p.x,p.z,'maze_friend',`חבר המבוך ${i+1} — פותרים ומשחררים`,{score:15},MAZE_Y);
+        const gate=createObstacle(p.x,p.z,'maze_friend',`חבר המבוך ${i+1} — קוראים ומשחררים`,{score:15},MAZE_Y);
         gate.userData.realm='maze';gate.userData.kind=['missing','sequence','division'][i%3];
         // Stone pedestals and a little arch make each rescue station recognizable.
         const npc=createBlueNPC(true);npc.position.set(p.x,MAZE_Y,p.z);group.add(npc);
@@ -105,7 +105,7 @@ function createMazeWorld(){
         g.position.set(p.x,MAZE_Y,p.z);group.add(g);
         const guard={mesh:g,active:true,isMaze:true,realm:'maze',target:id,route:[],home:id};mazeWorld.guards.push(guard);predators.push(guard);
     }
-    const end=mazePoint(layout.exit),exit=createObstacle(end.x,end.z,'maze_exit','שער היציאה — חידת המבוך האחרונה',{score:100},MAZE_Y);
+    const end=mazePoint(layout.exit),exit=createObstacle(end.x,end.z,'maze_exit','שער היציאה — מילת המבוך האחרונה',{score:100},MAZE_Y);
     Object.assign(exit.userData,{realm:'maze',kind:'missing'});mazeWorld.exit=exit;
     mazeBox(2,11,2,0xc6a464,end.x-5,MAZE_Y+5.5,end.z);mazeBox(2,11,2,0xc6a464,end.x+5,MAZE_Y+5.5,end.z);mazeBox(12,2,2,0xf2de9c,end.x,MAZE_Y+11,end.z);
     for(let i=0;i<12;i++){const mark=new THREE.Mesh(new THREE.RingGeometry(.45,.8,12),new THREE.MeshBasicMaterial({color:0x317ee5,side:THREE.DoubleSide}));mark.rotation.x=-Math.PI/2;mark.visible=false;group.add(mark);mazeWorld.trail.push(mark);}
@@ -180,7 +180,7 @@ function handleMazeSuccess(obstacle){
         mazeMessage('חבר חולץ! '+mazeWorld.rescued+' מתוך 8.');refreshMazePowers();showPowerupModal('כוח חדש: '+name,description);
     }else if(obstacle.userData.type==='maze_chest'){mazeMessage('תיבת הסודות נפתחה! 25 נקודות נוספות.');}
     else if(obstacle.userData.type==='maze_exit'){
-        mazeWorld.completed=true;gameState='MAZE_COMPLETE';document.getElementById('maze-win-score').textContent='הצלתם את כל שמונת החברים! הניקוד שלכם: '+score;document.getElementById('maze-win').classList.add('active');
+        mazeWorld.completed=true;gameState='MAZE_COMPLETE';document.getElementById('maze-win-score').textContent='המבוך הושלם! חברים שהצלתם: '+mazeWorld.rescued+'/8 · הניקוד שלכם: '+score;document.getElementById('maze-win').classList.add('active');
     }
 }
 function mazeContinueExploring(){document.getElementById('maze-win').classList.remove('active');gameState='PLAYING';mazeMessage('המבוך הושלם! אפשר להמשיך לחפש תיבות סודות.');}
@@ -199,6 +199,7 @@ function stepMaze(delta,time){
     for(const chest of mazeWorld.chests)chest.visible=mazeWorld.timers.lantern>0&&!chest.userData.cleared;
     const obstacles=[...mazeWorld.friends.filter(f=>!f.free).map(f=>f.gate),...mazeWorld.chests.filter(c=>c.visible),mazeWorld.exit];
     for(const o of obstacles)if(!o.userData.cleared&&Math.hypot(playerGroup.position.x-o.position.x,playerGroup.position.z-o.position.z)<3.6&&Math.abs(playerGroup.position.y-MAZE_Y)<4){
+        if(o===mazeWorld.exit&&mazeWorld.exitUnlocked){activeObstacle=o;handleSuccess();return;}
         if(o===mazeWorld.exit&&mazeWorld.rescued<8){mazeMessage('שער היציאה מחכה: צריך להציל עוד '+(8-mazeWorld.rescued)+' חברים.');continue;}
         triggerChallenge(o);return;
     }

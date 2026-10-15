@@ -1,8 +1,8 @@
 # Maze stage
 
-The green gate at the end of the rainbow opens after the final gold-pot question. Entering resets the previous realm's powers. For quick testing use `?stage=maze`, then select the school grade.
+The green gate at the end of the rainbow opens after the final gold-pot Hebrew reading challenge. Entering resets the previous realm's powers. For quick testing use `?stage=maze`, then select the school grade.
 
-The maze is a connected 11×11 graph shared by walls, collisions, guard routing and the temporary map. Rescue any friend to gain the next power. Rescue all eight and solve the exit question to finish and earn 100 points.
+The maze is a connected 11×11 graph shared by walls, collisions, guard routing and the temporary map. Rescue any friend to gain the next power. Rescue all eight and read the exit word to finish and earn 100 points.
 
 1. B: break one interior wall once.
 2. M: map and route arrows for 30 visible-tab seconds, once. The map expires even during questions or breathing.
@@ -16,3 +16,5 @@ The maze is a connected 11×11 graph shared by walls, collisions, guard routing 
 Arrow keys/touch controls move; Space jumps. ABUBU retains the 5× speed shortcut; swept collision prevents crossing walls. HUD buttons also activate powers.
 
 Run `node tests/maze.cjs` from this project or any directory. It checks 100 layouts, connectivity, rescue placement, collision, portal/exit gating, rewards, limits, map expiry, breathing, two-question encounters, and victory. Other `tests/check-*.cjs` files verify prior worlds.
+
+Friends and the exit use the Hebrew reading drill; guards and hidden chests remain arithmetic. Type `powers` during play to unlock all eight Maze powers and replenish uses, or `gates` to bypass the exit lock. These testing shortcuts do not rescue friends or add points; reaching the unlocked exit completes the stage normally.

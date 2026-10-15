@@ -22,11 +22,15 @@
     "niqqud-decoding"
   ],
   "gameLevels": [
-    1
+    1,
+    2,
+    3,
+    4
   ],
   "groups": [
     "reading",
-    "friend-rescue"
+    "friend-rescue",
+    "stage-lock"
   ],
   "tags": [
     "hebrew",
@@ -242,7 +246,7 @@
       "speech-transcript",
       "adult-confirmed"
     ],
-    "success": "One whole-word transcript match after stripping niqqud and punctuation, or explicit adult confirmation. The learner then returns to rescue the friend. No phonetic pronunciation scoring."
+    "success": "One whole-word transcript match after stripping niqqud and punctuation, or explicit adult confirmation. Automatically returns success after brief feedback; the game owns rescue and gate rewards. No phonetic pronunciation scoring."
   },
   "source": {
     "project": "hebrew-reading-lab",

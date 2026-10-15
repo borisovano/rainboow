@@ -209,6 +209,7 @@
     // --- Powerups State ---
     let totalFriends = 8;
     let friendsRescued = 0;
+    let readingChallengesCompleted = 0;
     let currentRealm = 'earth';
     const powerups = {
         superJump: false,   // Power 1
@@ -468,7 +469,7 @@
         currentMistakes = 0;
         monsterRig.scale.set(1,1,1);
         playerVelocityY = Math.min(playerVelocityY,0.48);
-        document.getElementById('space-warning').textContent = realm === 'rainbow' ? 'ברוכים הבאים לעולם הקשת! פתרו שערי חשבון והצילו חברים 🌈' : realm === 'moon'
+        document.getElementById('space-warning').textContent = realm === 'rainbow' ? 'ברוכים הבאים לעולם הקשת! פתחו שערי קריאה והצילו חברים 🌈' : realm === 'moon'
             ? 'הגעתם לירח! הכוחות התאפסו — הצילו חברים כדי לקבל כוחות חדשים 🌙'
             : 'חזרתם לעולם הרגיל. הכוחות התאפסו 🌍';
     }
@@ -688,7 +689,7 @@
             const t=i/12;cloud(source.x+(720-source.x)*t,H+55*Math.sin(t*Math.PI)-5,source.z+(i%2?14:-14),4);
         }
         const kinds=['missing','sequence','division'];
-        const titles=['שער המספר החסר','שער סדרת הצבעים','שער טיפות החשבון'];
+        const titles=['שער המילים','שער אותיות הצבעים','שער הקריאה'];
         [2.6,1.75,.9].forEach((angle,i)=>{
             const p=rainbowPoint(angle);
             const gate=createObstacle(p.x,p.z,'rainbow_gate',titles[i],{score:20},H);
@@ -700,7 +701,7 @@
         // Eight cloud friends, distributed along the whole crescent.
         for(let i=0;i<8;i++) {
             const angle=2.95-i*.36,p=rainbowPoint(angle,i%2?315:247);
-            const gate=createObstacle(p.x,p.z,'npc_gate',`חבר ענן ${i+1} — הצילו בעזרת חשבון`,{score:15},H);
+            const gate=createObstacle(p.x,p.z,'npc_gate',`חבר ענן ${i+1} — הצילו בעזרת קריאה`,{score:15},H);
             Object.assign(gate.userData,{realm:'rainbow',kind:kinds[i%3],powerIndex:i});
             const npc=createBlueNPC(true);npc.position.set(p.x,H,p.z);scene.add(npc);
             npcList.push({mesh:npc,gate,isFree:false,realm:'rainbow',origin:{x:p.x,z:p.z}});
@@ -901,25 +902,59 @@
         document.getElementById('space-warning').textContent = 'קיצור דרך הופעל — כל השערים לירח פתוחים! 🌙';
     }
 
+    function unlockCurrentPowers() {
+        if(currentRealm==='maze') {
+            for(const key of Object.keys(mazePowers))mazePowers[key]=true;
+            mazeWorld.used={};
+            for(const key of Object.keys(mazeWorld.cooldowns))mazeWorld.cooldowns[key]=0;
+            refreshMazePowers();mazeMessage('קיצור בדיקה: כל כוחות המבוך זמינים!');
+        } else if(currentRealm==='rainbow') {
+            for(const key of rainbowPowerKeys)rainbowPowers[key]=true;
+            for(const key of Object.keys(rainbowTimers))rainbowTimers[key]=0;
+            refreshRainbowPowers();
+        } else {
+            for(const key of Object.keys(powerups))powerups[key]=true;
+            for(const id of ['power-jump','power-shield','power-slow','power-god'])document.getElementById(id).classList.add('active');
+        }
+        document.getElementById('space-warning').classList.remove('hidden');
+        document.getElementById('space-warning').textContent='קיצור בדיקה: כל הכוחות בעולם הזה זמינים! ⚡';
+    }
+    function openCurrentGates() {
+        if(currentRealm==='maze') {
+            mazeWorld.exitUnlocked=true;
+            mazeWorld.exit.children.forEach(child=>child.visible=false);
+            mazeMessage('קיצור בדיקה: שער היציאה פתוח — הגיעו אליו כדי לסיים!');
+        } else if(currentRealm==='rainbow') {
+            for(const gate of interactables.filter(o=>o.userData.realm==='rainbow'&&(o.userData.type==='rainbow_gate'||o.userData.final))) {
+                gate.userData.cleared=true;gate.children.forEach(child=>child.visible=false);
+            }
+            rainbowWorld.complete=true;
+            document.getElementById('space-warning').textContent='קיצור בדיקה: שערי הקשת והמעבר למבוך פתוחים! 🧩';
+        } else openMoonShortcut();
+    }
+
     window.addEventListener('keydown', (e) => {
         if(gameState !== 'PLAYING') { moonShortcut = ''; return; }
-        if(currentRealm==='maze'&&!e.repeat){const power={KeyB:'hammer',KeyM:'map',KeyE:'echo',KeyF:'freeze',KeyT:'anchor',KeyL:'lantern'}[e.code];if(power){useMazePower(power);return;}}
         if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
             const now = Date.now();
             if (now - moonShortcutTime > 2000) moonShortcut = '';
-            const letter = e.code === 'KeyA' ? 'a' : e.code === 'KeyB' ? 'b' : e.code === 'KeyU' ? 'u' : '';
-            moonShortcut = letter ? (moonShortcut + letter).slice(-5) : e.code === 'Minus' ? moonShortcut : '';
+            const letter = /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : '';
+            moonShortcut = letter ? (moonShortcut + letter).slice(-6) : e.code === 'Minus' ? moonShortcut : '';
             moonShortcutTime = now;
             if (moonShortcut.endsWith('aba')) {
                 moonShortcut = '';
-                openMoonShortcut();
-            } else if (moonShortcut === 'abubu') {
+                openMoonShortcut();return;
+            } else if (moonShortcut.endsWith('abubu')) {
                 moonShortcut = '';
                 movementSpeedMultiplier = 5;
                 document.getElementById('space-warning').classList.remove('hidden');
-                document.getElementById('space-warning').textContent = 'מהירות תנועה ×5 הופעלה! ⚡';
-            }
+                document.getElementById('space-warning').textContent = 'מהירות תנועה ×5 הופעלה! ⚡';return;
+            } else if(moonShortcut.endsWith('powers')) {moonShortcut='';unlockCurrentPowers();return;
+            } else if(moonShortcut.endsWith('gates')) {moonShortcut='';openCurrentGates();return;}
+            // Do not activate E/R/T/B powers while typing a shortcut.
+            if(letter&&['powers','gates','aba','abubu'].some(word=>Array.from({length:word.length-1},(_,i)=>word.slice(0,i+1)).some(prefix=>moonShortcut.endsWith(prefix))))return;
         }
+        if(currentRealm==='maze'&&!e.repeat){const power={KeyB:'hammer',KeyM:'map',KeyE:'echo',KeyF:'freeze',KeyT:'anchor',KeyL:'lantern'}[e.code];if(power){useMazePower(power);return;}}
         if(e.code === 'ArrowLeft') keys.left = true;
         if(e.code === 'ArrowRight') keys.right = true;
         if(e.code === 'ArrowUp') keys.up = true;
@@ -989,8 +1024,8 @@
 
     function triggerChallenge(obstacle) {
         if (gameState !== 'PLAYING' || obstacle.userData.cleared || (obstacle.userData.drillRetryAt||0)>simulationTime) return;
-        if (currentRealm === 'earth' && obstacle.userData.type === 'npc_gate') {
-            triggerReadingRescue(obstacle); return;
+        if (usesHebrewDrill(obstacle)) {
+            triggerReadingChallenge(obstacle); return;
         }
         gameState = 'CHALLENGE';
         activeObstacle = obstacle;
@@ -1013,7 +1048,13 @@
         challengeDialog.show();
     }
 
-    function triggerReadingRescue(obstacle) {
+    function usesHebrewDrill(obstacle) {
+        const {type,final}=obstacle.userData;
+        return ['npc_gate','maze_friend','bridge_gate','rainbow_gate','space_portal','maze_exit'].includes(type)
+            || (type==='rainbow_chest'&&final);
+    }
+
+    function triggerReadingChallenge(obstacle) {
         gameState='CHALLENGE';activeObstacle=obstacle;currentChallenge=null;
         Object.keys(keys).forEach(key=>keys[key]=false);
         function cancel(message){
@@ -1023,11 +1064,12 @@
             if(message){document.getElementById('space-warning').classList.remove('hidden');document.getElementById('space-warning').textContent=message;}
         }
         DrillHost.open('hebrew-reading',{
-                dismissible: false,
-            params:{wordIndex:friendsRescued},context:{gameLevel:1},
-            onComplete(){if(gameState==='CHALLENGE'&&activeObstacle===obstacle&&!obstacle.userData.cleared){playSuccessSound();handleSuccess();}},
+            dismissible:false,
+            params:{wordIndex:readingChallengesCompleted},
+            context:{gameLevel:{earth:1,moon:2,rainbow:3,maze:4}[currentRealm],realm:currentRealm,encounter:obstacle.userData.type},
+            onComplete(){if(gameState==='CHALLENGE'&&activeObstacle===obstacle&&!obstacle.userData.cleared){readingChallengesCompleted++;playSuccessSound();handleSuccess();}},
             onCancel:()=>cancel()
-        }).catch(()=>cancel('לא הצלחנו לטעון את תרגול הקריאה. אפשר לגשת לחבר ולנסות שוב.'));
+        }).catch(()=>cancel('לא הצלחנו לטעון את תרגול הקריאה. אפשר לגשת לאתגר ולנסות שוב.'));
     }
 
     function playerHitsPredator(pred) {
@@ -1320,7 +1362,7 @@
         for (let i=0; i<3; i++) {
             const start = -410-i*160;
             const deck = walkway(start, start-120, colors[i]);
-            const gate = createObstacle(0, start, 'bridge_gate', `שער ${i+1} מתוך 3 — אתגר ברמה הבאה`, {score: 0});
+            const gate = createObstacle(0, start, 'bridge_gate', `שער ${i+1} מתוך 3 — קוראים ופותחים`, {score: 0});
             gate.userData.deck = deck;
             const barrier = new THREE.Mesh(new THREE.BoxGeometry(16, 6, 1),
                 new THREE.MeshLambertMaterial({color: colors[i], transparent: true, opacity: .8}));

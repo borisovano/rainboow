@@ -1,6 +1,6 @@
 # Hebrew reading
 
-An adaptation of `hebrew-reading-lab`, with its own HTML, CSS, word bank, and speech interaction. Game level 1 friends use this drill.
+An adaptation of `hebrew-reading-lab`, with its own HTML, CSS, word bank, and speech interaction. All four worlds use this drill for friends and progression locks. The word bank retains its beginner reading proficiency; world number is not reading difficulty.
 
 Run only its tests: `npm run test:drill -- hebrew-reading` (from the repo root).
 

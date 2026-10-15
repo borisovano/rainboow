@@ -20,7 +20,7 @@ The 3D game loads Three.js, Tone.js, Tailwind, and a font from external CDNs. Th
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md). A contribution is a folder in `drill-modals/` containing **your HTML/CSS/JS, `drill.json` metadata, and unit tests**. Shared `helpers/` and `styles/` support each drill. [The runner guide](drill-modals/README.md) explains parameterized manual testing and the game output contract. There is no mandatory component structure. The host handles opening/closing; the drill reports completion through a tiny message bridge.
 
-The first real example, `drill-modals/hebrew-reading/`, adapts the sibling `hebrew-reading-lab` project. Level 1 friends open it. Read one word successfully, then choose to release the friend; points and powers remain owned by the game. Canceling grants nothing and allows another attempt. Other encounters keep their math questions.
+The first real example, `drill-modals/hebrew-reading/`, adapts the sibling `hebrew-reading-lab` project. All friends in Earth, Moon, Rainbow and Maze use it, along with Moon bridge gates, Rainbow gates, the final gold-pot unlock to the Maze, and the Maze exit. One correct word automatically returns to the game; points, powers and unlock conditions remain owned by the game. Enemy encounters and ordinary obstacles/treasure keep their math questions.
 
 ## Source map
 
@@ -48,3 +48,5 @@ git push -u origin main
 ```
 
 No GitHub remote has been configured for you. The tracked `.openai/hosting.json` identifies the existing Sites publication; it contains no credentials. To host elsewhere, run `npm run build` and publish the contents of `build/` using any static host.
+
+Testing shortcuts (type during play; physical English letter keys also work with a Hebrew keyboard): `aba` opens the Moon route; `abubu` sets speed ×5; `powers` unlocks all powers of the current world (and replenishes their uses/cooldowns); `gates` opens its progression gates. In the Maze, `gates` allows finishing by walking to the exit without rescuing everyone or answering the exit drill. Shortcuts do not award rescue points or mark friends rescued. Powers still reset on entering another world.
