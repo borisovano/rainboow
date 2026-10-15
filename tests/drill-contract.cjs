@@ -7,11 +7,12 @@ assert.throws(()=>runner.parse('{',m),/valid JSON/);assert.throws(()=>runner.par
 const result=contract.completion(m,{outcome:'success',method:'speech-transcript',itemId:'דג',attempts:2,score:9999,details:{hintsUsed:1}},123.4);
 assert.equal(result.schemaVersion,1);assert.equal(result.durationMs,123);assert.equal(result.score,undefined);assert.equal(result.details.hintsUsed,1);
 assert.throws(()=>contract.completion(m,{...result,attempts:-1},0));assert.throws(()=>contract.completion(m,{...result,method:'unknown'},0));
-let listener,startArgs,disposed=0;const sent=[],parent={postMessage:data=>sent.push(data)};
-const context={window:{addEventListener:(type,fn)=>{if(type==='message')listener=fn;}},location:{origin:'http://test'},parent};vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../drill-modals/helpers/client.js'),'utf8'),context);
+let listener,keyListener,startArgs,disposed=0;const sent=[],parent={postMessage:data=>sent.push(data)};
+const context={window:{addEventListener:(type,fn)=>{if(type==='message')listener=fn;if(type==='keydown')keyListener=fn;}},location:{origin:'http://test'},parent};vm.createContext(context);vm.runInContext(fs.readFileSync(require.resolve('../drill-modals/helpers/client.js'),'utf8'),context);
 const client=context.window.Drill;client.onStart((...args)=>{startArgs=args;});client.onDispose(()=>disposed++);
 const init={channel:'adventure-drill-v1',type:'init',session:'one',params:{word:'דג'},context:{gameLevel:1}};
 listener({source:{},origin:'http://test',data:init});assert.equal(startArgs,undefined);
 listener({source:parent,origin:'http://test',data:init});assert.equal(startArgs[0].word,'דג');assert.equal(startArgs[1].gameLevel,1);assert.equal(sent[0].type,'ready');
-assert(client.complete({outcome:'success'}));assert(!client.complete({outcome:'success'}));assert.equal(disposed,1);assert.equal(sent.length,2);
+keyListener({key:'Escape'});assert.equal(sent[1].type,'request-cancel');assert.equal(disposed,0,'Escape request does not end a game challenge');
+assert(client.complete({outcome:'success'}));assert(!client.complete({outcome:'success'}));assert.equal(disposed,1);assert.equal(sent.length,3);
 console.log('PASS: runner URL round trip, input validation, normalized outputs, client context handoff, one-time completion and disposal.');

@@ -20,9 +20,9 @@
    el('input-output').textContent=JSON.stringify({drillId:m.id,params,context},null,2);
    el('permalink').href=DrillRunner.link(location.href,m.id,params);el('permalink').hidden=false;
    history.replaceState(null,'',el('permalink').href.replace('&run=1',''));
-   message('Drill is running. Close or complete it to inspect the result.');
+   message('Drill is running. Answer to finish automatically, or press Escape to cancel this test.');
    try{
-     active=await DrillHost.open(m.id,{params,context,
+     active=await DrillHost.open(m.id,{params,context,dismissible:true,
        onEvent(event){appendEvent(event.type+(event.message?': '+event.message:''));},
        onResult(result){active=null;el('result-output').textContent=JSON.stringify(result,null,2);appendEvent('result: '+result.outcome);message('Result received: '+result.outcome,result.outcome==='error');el('run').disabled=false;el('run').focus();}
      });

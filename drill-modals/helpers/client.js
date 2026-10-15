@@ -12,6 +12,11 @@
       try{initHandler(data.params||{},data.context||{});parent.postMessage({channel:data.channel,type:'ready',session},hostOrigin);}catch{send('error');}
     }else if(data.type==='dispose'&&data.session===session){finished=true;dispose();}
   });
+  // Keyboard events do not bubble from an iframe to its host dialog.
+  window.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!event.defaultPrevented&&session&&!finished)
+      parent.postMessage({channel:'adventure-drill-v1',session,type:'request-cancel'},hostOrigin);
+  });
   window.Drill={onStart(fn){initHandler=fn;},onDispose(fn){cleanup.add(fn);},complete(result){return send('complete',result);},cancel(){return send('cancel');}};
   window.addEventListener('pagehide',dispose);
 })();

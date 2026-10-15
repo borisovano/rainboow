@@ -16,7 +16,7 @@
     if(new Set(entries.map(e=>e.metadata.id)).size!==entries.length)throw Error('Duplicate drill id');
     return entries.filter(e=>DrillMetadata.matches(e.metadata,query));
   }
-  async function open(id,{params={},context={},onResult=()=>{},onEvent=()=>{},onComplete=()=>{},onCancel=()=>{},onFailure=onCancel}={}){
+  async function open(id,{params={},context={},dismissible=false,onResult=()=>{},onEvent=()=>{},onComplete=()=>{},onCancel=()=>{},onFailure=onCancel}={}){
     if(current)throw Error('A drill is already open');
     const handle={};current=handle;
     let done=false,started=Date.now(),cleanup=()=>{};
@@ -30,15 +30,15 @@
     try{
       const entry=(await list()).find(e=>e.metadata.id===id);if(!entry)throw Error('Unknown drill: '+id);
       const m=entry.metadata,validated=DrillContract.parameters(m,params);
-      const dialog=document.createElement('dialog'),header=document.createElement('header'),title=document.createElement('h2'),close=document.createElement('button'),frame=document.createElement('iframe'),notice=document.createElement('p');
+      const dialog=document.createElement('dialog'),header=document.createElement('header'),title=document.createElement('h2'),testHint=document.createElement('small'),frame=document.createElement('iframe'),notice=document.createElement('p');
       const session=crypto.randomUUID(),origin=location.origin,previousFocus=document.activeElement;
       let ready=false;
       dialog.className='drill-modal';dialog.dir=m.direction;dialog.lang=m.language;dialog.setAttribute('aria-label',m.title);
-      title.textContent=m.title;close.textContent='סגירה וחזרה';close.type='button';close.setAttribute('aria-label','סגירת התרגול וחזרה למשחק');
+      title.textContent=m.title;testHint.textContent='Esc · ביטול בדיקה';
       frame.title=m.title;frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms');
       if(m.capabilities.includes('microphone'))frame.setAttribute('allow',"microphone 'self'");
       notice.textContent='טוענים את התרגול…';notice.setAttribute('role','status');
-      header.append(title,close);dialog.append(header,notice,frame);document.body.appendChild(dialog);
+      header.append(title);if(dismissible)header.append(testHint);dialog.append(header,notice,frame);document.body.appendChild(dialog);
       const send=type=>frame.contentWindow?.postMessage({channel,type,session,params:validated,context},origin);
       const elapsed=()=>Date.now()-started;
       const timeout=setTimeout(()=>{if(!ready)finish(DrillContract.terminal(id,'error','load-timeout',elapsed()));},10000);
@@ -51,6 +51,7 @@
         const data=event.data;
         if(done||event.source!==frame.contentWindow||event.origin!==origin||data?.channel!==channel||data.session!==session)return;
         if(data.type==='ready'&&!ready){ready=true;notice.hidden=true;clearTimeout(timeout);onEvent({type:'ready',drillId:id});}
+        if(data.type==='request-cancel'&&dismissible)finish(DrillContract.terminal(id,'cancelled','escape',elapsed()));
         if(data.type==='cancel')finish(DrillContract.terminal(id,'cancelled','drill-cancelled',elapsed()));
         if(data.type==='error')finish(DrillContract.terminal(id,'error','drill-error',elapsed()));
         if(ready&&data.type==='complete'){
@@ -60,8 +61,8 @@
       }
       window.addEventListener('message',receive);frame.onload=()=>{if(!done)send('init');};
       const cancel=reason=>finish(DrillContract.terminal(id,'cancelled',reason,elapsed()));
-      close.onclick=()=>cancel('close-button');dialog.addEventListener('cancel',event=>{event.preventDefault();cancel('escape');});
-      frame.src=new URL(m.entry,entry.url).href;dialog.showModal();close.focus();
+      dialog.addEventListener('cancel',event=>{event.preventDefault();if(dismissible)cancel('escape');});
+      frame.src=new URL(m.entry,entry.url).href;dialog.showModal();frame.focus();
       onEvent({type:'opened',drillId:id,params:validated,context});
       return {close:()=>cancel('host-cancelled'),metadata:m,params:validated};
     }catch(error){

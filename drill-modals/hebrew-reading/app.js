@@ -2,19 +2,9 @@ const WORDS = HebrewWords;
 const normalize = HebrewReading.normalize;
 const el = id => document.getElementById(id);
 let pool = WORDS, index = 0, active = null, timeout = null, successResult=null;
-const completed = new Set();
-let streak = 0, wordSolved = false, celebrationTimer, attempts=0, hintsUsed=0;
-const earnedMedals = new Set();
-function updateStreak() {
-  el('streak').textContent = `רצף הצלחות: ${streak} מילים`;
-  for (const threshold of [3,5,10]) {
-    if (streak >= threshold) earnedMedals.add(threshold);
-    el('medal-' + threshold).classList.toggle('earned', earnedMedals.has(threshold));
-    el('medal-' + threshold).setAttribute('aria-label', `${threshold} ברצף: ${earnedMedals.has(threshold) ? 'המדליה הושגה' : 'טרם הושגה'}`);
-  }
-}
+let wordSolved = false, celebrationTimer, completionTimer, attempts=0, hintsUsed=0;
 function speakLetter(letter, word, position, button) {
-  if (active) return;
+  if (active || wordSolved) return;
   const synth = window.speechSynthesis;
   if (!synth || !window.SpeechSynthesisUtterance) {
     status('השמעת אותיות אינה זמינה בדפדפן הזה.', 'error'); return;
@@ -35,7 +25,7 @@ function speakLetter(letter, word, position, button) {
   if (['תות','סוס'].includes(normalize(word)) && position === 0) spoken += 'וּ';
   if (normalize(word) === 'כלב' && position === 2) spoken = 'בְ';
   const voice = synth.getVoices().find(v => /^(he|iw)(-|$)/i.test(v.lang));
-  if (!voice) { status('לא נמצא קול עברי להשמעה. צריך להוסיף קול עברי בהגדרות המכשיר או להשתמש בדפדפן עם קול עברי.', 'error'); return; }
+  if (!voice) { status('אין קול עברי במכשיר. אפשר לקרוא בקול או להיעזר במבוגר.', 'error'); return; }
   const utterance = new window.SpeechSynthesisUtterance(spoken);
   utterance.lang = 'he-IL'; utterance.voice = voice; utterance.rate = .7;
   utterance.onstart = () => button.classList.add('speaking');
@@ -48,7 +38,7 @@ function celebrate() {
   clearTimeout(celebrationTimer); el('celebration').replaceChildren();
   const card = document.querySelector('.card'); card.classList.remove('win');
   void card.offsetWidth; card.classList.add('win');
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 30; i++) {
     const piece = document.createElement('i'); piece.className = 'confetti';
     piece.style.left = `${Math.random() * 100}%`;
     piece.style.background = ['#ffbe26','#44d5a0','#ff6b92','#59a9ff','#ab79ef'][i % 5];
@@ -100,6 +90,7 @@ function playSound(success) {
   } catch { /* No sound device must not affect the answer. */ }
 }
 function showHint(picture = false) {
+  if (wordSolved) return;
   hintsUsed++;
   const [icon, clue] = HINTS[normalize(pool[index])];
   el('hint').hidden = false; el('hint').replaceChildren();
@@ -134,27 +125,27 @@ function status(message, type = '', transcript = '') {
 function setBusy(busy) {
   el('mic').classList.toggle('listening', busy); el('mic').setAttribute('aria-pressed', String(busy));
   el('mic-label').textContent = busy ? 'מקשיבים… לחצו לסיום' : 'לוחצים ואומרים';
-  el('next').disabled = busy; el('choose').disabled = busy;
-  document.querySelectorAll('.filter, .letter').forEach(b => b.disabled = busy);
+  document.querySelectorAll('.letter').forEach(b => b.disabled = busy || wordSolved);
+  el('adult-submit').disabled = busy || wordSolved;
 }
 function render() {
   window.speechSynthesis?.cancel();
-  attempts=0;hintsUsed=0;successResult=null;wordSolved = false; el('reward').textContent = '';
-  el('return-to-game').hidden = true; el('adult-confirm').checked = false;
+  stopMedia();
+  attempts=0;hintsUsed=0;successResult=null;wordSolved=false;
+  el('adult-confirm').checked=false;el('adult-submit').disabled=false;
   misses = 0; el('hint').hidden = true; el('hint').replaceChildren();
   const word = pool[index]; el('word').textContent = word;
-  el('meta').textContent = `${normalize(word).length} אותיות · מילה ${index + 1} מתוך ${pool.length}`;
+  el('meta').textContent = `${normalize(word).length} אותיות`;
   el('letters').replaceChildren(...Array.from(word.normalize('NFD').matchAll(/[\u05D0-\u05EA][\u0591-\u05C7]*/g), (m, position) => {
     const letter = document.createElement('button'); letter.type = 'button'; letter.className = 'letter'; letter.textContent = m[0];
     letter.setAttribute('aria-label', 'השמעת הצליל של ' + m[0]);
     letter.onclick = () => speakLetter(m[0], word, position, letter); return letter;
   }));
-  el('choose').replaceChildren(...pool.map((w, i) => { const o = document.createElement('option'); o.value = i; o.textContent = w; return o; }));
-  el('choose').value = index;
-  status(Recognition ? 'מוכנים? אמרו רק את המילה שעל המסך.' : 'הדפדפן הזה אינו תומך בזיהוי קולי. פתחו את הניסוי ב־Chrome.', Recognition ? '' : 'error');
+  status(Recognition ? 'אמרו את המילה שעל המסך.' : 'אין זיהוי קולי בדפדפן הזה. אפשר לקרוא למבוגר שיאשר.', Recognition ? '' : 'error');
   el('mic').disabled = !Recognition;
 }
 el('mic').onclick = () => {
+  if (wordSolved) return;
   if (active) { active.stop(); el('mic').disabled = true; el('mic-label').textContent = 'בודקים…'; return; }
   if (!Recognition) return;
   prepareAudio(); window.speechSynthesis?.cancel();
@@ -170,32 +161,25 @@ el('mic').onclick = () => {
     if (!normalize(transcript)) { status('לא זוהתה מילה בעברית. ננסה שוב?', 'retry'); }
     else if (HebrewReading.matches(transcript,target)) {
       attempts++;
-      completed.add(normalize(target)); el('progress').textContent = `${completed.size} מילים שקראנו בהצלחה`;
-      if (!wordSolved) {
-        wordSolved = true; streak++;
-        const newMedal = [3,5,10].includes(streak) && !earnedMedals.has(streak);
-        updateStreak();
-        el('reward').textContent = newMedal ? `מדליה חדשה! ${streak} מילים ברצף!` : 'איזה יופי! ממשיכים למילה הבאה';
-      }
       celebrate();
       status('✓ נכון! כל הכבוד!', 'success', transcript); playSound(true);
       readingSucceeded('speech-transcript', target);
     } else {
       attempts++;retryTranscript = transcript;
-      misses++; streak = 0; updateStreak(); el('reward').textContent = 'מתחילים רצף חדש — המדליות שהרווחתם נשארות!'; playSound(false);
-      status(misses >= 2 ? '↻ זו לא המילה שעל המסך. ננסה שוב עם התמונה!' : '↻ זו לא המילה שעל המסך. ננסה שוב!', 'retry', transcript);
+      misses++; playSound(false);
+      status(misses >= 2 ? 'ננסה שוב עם הרמז!' : 'זו מילה אחרת. ננסה שוב!', 'retry', transcript);
       if (misses >= 2) showHint(true);
     }
   };
   recognition.onerror = event => {
     if (active !== recognition || resolved) return;
     resolved = true;
-    const errors = {'not-allowed':'צריך לאפשר שימוש במיקרופון בהגדרות הדפדפן.', 'service-not-allowed':'שירות הזיהוי אינו זמין בדפדפן הזה.', 'audio-capture':'לא נמצא מיקרופון זמין. בדקו שהוא מחובר.', 'no-speech':'לא שמעתי מילה. לחצו ונסו שוב.', 'network':'שירות זיהוי הדיבור אינו נגיש. אם אתם בדפדפן המובנה של Codex, פתחו את אותה כתובת ב־Google Chrome ונסו שוב. אם גם שם נכשל, בדקו את החיבור לשירות הזיהוי.', 'language-not-supported':'שירות הזיהוי בדפדפן הזה אינו תומך בעברית.', 'aborted':'ההאזנה הסתיימה. אפשר לנסות שוב.'};
+    const errors = {'not-allowed':'צריך לאפשר שימוש במיקרופון בהגדרות הדפדפן.', 'service-not-allowed':'שירות הזיהוי אינו זמין בדפדפן הזה.', 'audio-capture':'לא נמצא מיקרופון זמין. בדקו שהוא מחובר.', 'no-speech':'לא שמעתי מילה. לחצו ונסו שוב.', 'network':'הזיהוי אינו זמין. נסו ב־Chrome או קראו למבוגר שיאשר.', 'language-not-supported':'שירות הזיהוי בדפדפן הזה אינו תומך בעברית.', 'aborted':'ההאזנה הסתיימה. אפשר לנסות שוב.'};
     status(errors[event.error] || 'הזיהוי לא הצליח. אפשר לנסות שוב.', 'error');
   };
   recognition.onend = () => {
     if (active !== recognition) return;
-    clearTimeout(timeout); active = null; setBusy(false); el('mic').disabled = false;
+    clearTimeout(timeout); active = null; setBusy(false); el('mic').disabled = wordSolved;
     if (!resolved) status('לא הצלחתי לזהות מילה. ננסה שוב?', 'retry');
     if (retryTranscript && soundEnabled && window.speechSynthesis && window.SpeechSynthesisUtterance) {
       const voice = window.speechSynthesis.getVoices().find(v => /^(he|iw)(-|$)/i.test(v.lang));
@@ -210,37 +194,33 @@ el('mic').onclick = () => {
     recognition.start();
     timeout = setTimeout(() => {
       if (active !== recognition) return;
-      resolved = true; active = null; recognition.abort(); setBusy(false); el('mic').disabled = false;
+      resolved = true; active = null; recognition.abort(); setBusy(false); el('mic').disabled = wordSolved;
       status('ההאזנה הסתיימה. לחצו כדי לנסות שוב.', 'retry');
     }, 15000);
   } catch { active = null; setBusy(false); status('לא ניתן לפתוח את המיקרופון. בדקו את הרשאות הדפדפן.', 'error'); }
 };
-el('next').onclick = () => { index = (index + 1) % pool.length; render(); };
-el('choose').onchange = event => { index = Number(event.target.value); render(); };
-document.querySelectorAll('.filter').forEach(button => button.onclick = () => {
-  document.querySelectorAll('.filter').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
-  pool = WORDS.filter(w => button.dataset.length === 'all' || normalize(w).length === Number(button.dataset.length));
-  index = 0; render();
-});
-window.addEventListener('pagehide', () => { if (active) { const r = active; active = null; r.abort(); } clearTimeout(timeout); });
+window.addEventListener('pagehide', stopMedia);
 render();
 
 // Game adapter: the reading UI remains ordinary HTML/CSS/JS.
 function stopMedia(){
   if(active){const recognition=active;active=null;recognition.abort();}
-  clearTimeout(timeout);clearTimeout(celebrationTimer);
+  clearTimeout(timeout);clearTimeout(celebrationTimer);clearTimeout(completionTimer);
   window.speechSynthesis?.cancel();
   if(audio){audio.close().catch(()=>{});audio=null;}
 }
 function readingSucceeded(method,word){
+  if(successResult)return;
+  wordSolved=true;
   successResult={outcome:'success',method,itemId:normalize(word),attempts,details:{wordLength:normalize(word).length,hintsUsed}};
-  el('return-to-game').hidden=false;
+  el('mic').disabled=true;el('adult-submit').disabled=true;
+  // One challenge, one result. The host owns rewards and what happens next.
+  completionTimer=setTimeout(()=>Drill.complete(successResult),800);
 }
-el('return-to-game').onclick=()=>{if(successResult)Drill.complete(successResult);};
 el('adult-submit').onclick=()=>{
-  if(!el('adult-confirm').checked)return;
-  attempts++;stopMedia();wordSolved=true;readingSucceeded('adult-confirmed',pool[index]);
-  status('הקריאה אושרה. אפשר לשחרר את החבר!', 'success');
+  if(wordSolved||!el('adult-confirm').checked)return;
+  attempts++;stopMedia();readingSucceeded('adult-confirmed',pool[index]);
+  status('✓ הקריאה אושרה. כל הכבוד!', 'success');celebrate();
 };
 Drill.onStart(params=>{
   const selected=HebrewReading.plan(WORDS,params);pool=selected.pool;index=selected.index;
@@ -249,7 +229,6 @@ Drill.onStart(params=>{
   el('sound-button').setAttribute('aria-label',soundEnabled?'צלילים פעילים':'צלילים כבויים');
   el('sound-button').textContent=soundEnabled?'🔊 צלילים':'🔇 צלילים';
   el('adult-fallback').hidden=params.allowAdultConfirmation===false;
-  document.querySelectorAll('.filter').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.length===(params.wordLength??'all'))));
   render();
 });
 Drill.onDispose(stopMedia);

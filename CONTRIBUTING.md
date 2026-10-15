@@ -23,11 +23,18 @@ Declare browser `capabilities`, result methods in `assessment`, and honest succe
 ## Small HTML/CSS/JS guardrails
 
 - Use responsive HTML, correct `lang`/`dir`, labeled controls, visible keyboard focus, reduced-motion support, and feedback that does not depend only on color.
-- Each drill gets an iframe to isolate styles and IDs. Shared `styles/host.css` supplies the outer dialog, backdrop and close button. All inner layout is yours.
+- Each drill gets an iframe to isolate styles and IDs. Shared `styles/host.css` supplies the outer dialog and backdrop. All inner layout is yours. Game challenges have no exit button; the standalone runner opts into test cancellation.
 - Keep scripts/assets local, avoid inline JavaScript, `eval`, trackers, and undeclared remote dependencies. Copy an example's CSP. The host's result messages never accept game scores or powers.
-- Request microphone access only on a user click. Allow retries and closing when it fails. Keep recordings and transcripts out of outputs; use stable content IDs and result methods instead.
+- Request microphone access only on a user click. Allow retries and an alternative input (such as adult confirmation) when it fails. Keep recordings and transcripts out of outputs; use stable content IDs and result methods instead.
 - Use the bridge, not `parent.document` or game globals. Stop media/timers when disposed. The host validates source, origin, session and one-time completion, and removes the frame on close.
 - Review contributed JavaScript before merging. Frames use `allow-scripts allow-same-origin allow-forms` for browser speech and local form controls; the example CSP blocks network form submissions; this isolates layout but is not a security boundary for hostile code. Arbitrary uploaded code is not supported.
+
+## One challenge per modal
+
+- Fit the complete interaction into the frame without scrolling. Check desktop, narrow mobile (320 × 568) and landscape (844 × 390), including hints and retry feedback. Adapt spacing and layout; do not hide required controls with overflow clipping.
+- Present one assigned item. Keep word selection, filters and next-drill navigation in the launcher or game, outside the drill.
+- After brief success feedback, call `Drill.complete(...)` automatically, exactly once. Do not require a Finish, Continue or Return button. Cancel pending completion and media in `Drill.onDispose`.
+- The host defaults to `dismissible: false`. Only the standalone runner opts into `dismissible: true` for Escape cancellation, with a small keyboard hint. Neither mode adds exit buttons. Programmatic host cancellation remains available.
 
 ## Review checklist
 

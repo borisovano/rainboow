@@ -16,7 +16,7 @@ gameState='PLAYING';keys.up=true;const beforeScore=score;
 triggerChallenge(friend);
 if(gameState!=='CHALLENGE'||currentChallenge!==null||keys.up)throw Error('Did not pause for reading');
 `,ctx);
-assert.equal(opened.id,'hebrew-reading');assert.equal(opened.context.gameLevel,1);assert.equal(opened.params.wordIndex,0);
+assert.equal(opened.id,'hebrew-reading');assert.equal(opened.dismissible,false);assert.equal(opened.context.gameLevel,1);assert.equal(opened.params.wordIndex,0);
 opened.onCancel();
 vm.runInContext(`if(gameState!=='PLAYING'||friend.userData.cleared||score!==beforeScore)throw Error('Cancellation granted reward');simulationTime+=4;triggerChallenge(friend);`,ctx);
 opened.onComplete();opened.onComplete();
