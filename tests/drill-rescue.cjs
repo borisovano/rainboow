@@ -26,10 +26,10 @@ ctx.testOpened=()=>opened;ctx.completeReading=()=>{opened.onComplete();opened.on
 vm.runInContext(`
 function ensure(value,message){if(!value)throw Error(message);}
 function solveReading(obstacle,level){
- gameState='PLAYING';const before=readingChallengesCompleted;const savedScore=score;const multiplier=currentRealm==='rainbow'&&rainbowPowers.bonus?2:1;
+ gameState='PLAYING';selectedGrade=level;const before=readingChallengesCompleted;const savedScore=score;const multiplier=currentRealm==='rainbow'&&rainbowPowers.bonus?2:1;
  triggerChallenge(obstacle);
  const call=testOpened();ensure(call.id==='hebrew-reading'&&call.context.gameLevel===level&&call.context.realm===currentRealm,'Wrong drill or realm metadata');
- ensure(call.params.wordIndex===before&&currentChallenge===null,'Reading sequence reset or math opened');
+ ensure(call.params.grade===selectedGrade&&call.params.wordIndex===before&&currentChallenge===null,'Reading sequence reset or math opened');
  completeReading();ensure(obstacle.userData.cleared&&readingChallengesCompleted===before+1,'Completion not exactly once');
  ensure(score===savedScore+(obstacle.userData.config?.score??10)*multiplier,'Reward changed');
  if(gameState==='POWERUP')window.continueFromPowerup();

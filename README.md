@@ -50,3 +50,7 @@ git push -u origin main
 No GitHub remote has been configured for you. The tracked `.openai/hosting.json` identifies the existing Sites publication; it contains no credentials. To host elsewhere, run `npm run build` and publish the contents of `build/` using any static host.
 
 Testing shortcuts (type during play; physical English letter keys also work with a Hebrew keyboard): `aba` opens the Moon route; `abubu` sets speed ×5; `powers` unlocks all powers of the current world (and replenishes their uses/cooldowns); `gates` opens its progression gates. In the Maze, `gates` allows finishing by walking to the exit without rescuing everyone or answering the exit drill. Shortcuts do not award rescue points or mark friends rescued. Powers still reset on entering another world.
+
+Direct stage URLs: `/earth/`, `/moon/`, `/rainbow/`, `/maze/`. Each redirects to `/?stage=<name>`; select a class to start directly in that world with zero points and no powers. Unknown stage values start on Earth. These entries bypass earlier worlds, while the chosen world's own challenges stay active.
+
+Hebrew reading follows the selected class in every world: א׳ = 2 letters, ב׳ = 3, ג׳ = 4, ד׳ = 5. All 36 words have niqqud and hints; the runner can override the length for manual exploration.

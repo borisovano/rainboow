@@ -978,12 +978,25 @@
     addTouchControl('btn-left', 'left'); addTouchControl('btn-right', 'right'); addTouchControl('btn-up', 'up'); addTouchControl('btn-down', 'down');
     document.getElementById('btn-action').addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
 
+    function startAtStage(stage) {
+        if(stage==='maze'){enterMaze();return;}
+        if(stage!=='moon'&&stage!=='rainbow')return; // Earth is the default for missing/unknown stages.
+        openMoonShortcut();
+        resetRealmPowers(stage);
+        const point=stage==='rainbow'?rainbowPoint(Math.PI-.04):{x:0,z:MOON_ENTRY-20};
+        const height=stage==='rainbow'?rainbowWorld.height:terrainHeightAt(point.x,point.z);
+        playerGroup.position.set(point.x,height,point.z);
+        playerVelocityY=0;isJumping=false;groundHeight=height;
+        Object.keys(keys).forEach(key=>keys[key]=false);
+        camera.position.set(point.x,height+20,point.z+35);camera.lookAt(point.x,height,point.z);
+    }
+
     window.startGame = async function(grade) {
         selectedGrade = grade;
         await Tone.start();
         document.getElementById('start-modal').classList.remove('active');
         gameState = 'PLAYING';
-        if(new URLSearchParams(window.location.search).get('stage')==='maze')enterMaze();
+        startAtStage(new URLSearchParams(window.location.search).get('stage'));
     };
     
     window.continueFromPowerup = function() {
@@ -1065,7 +1078,7 @@
         }
         DrillHost.open('hebrew-reading',{
             dismissible:false,
-            params:{wordIndex:readingChallengesCompleted},
+            params:{wordIndex:readingChallengesCompleted,grade:selectedGrade},
             context:{gameLevel:{earth:1,moon:2,rainbow:3,maze:4}[currentRealm],realm:currentRealm,encounter:obstacle.userData.type},
             onComplete(){if(gameState==='CHALLENGE'&&activeObstacle===obstacle&&!obstacle.userData.cleared){readingChallengesCompleted++;playSuccessSound();handleSuccess();}},
             onCancel:()=>cancel()

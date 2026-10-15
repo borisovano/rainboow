@@ -9,12 +9,12 @@
   "difficulty": {
     "level": 1,
     "scale": "adventure-drills-v1",
-    "description": "Entry drill: read a familiar pointed Hebrew word with two or three letters; hints and retries available. This is not a school-grade assignment."
+    "description": "Configurable word-reading drill: class 1 uses 2 letters, class 2 uses 3, class 3 uses 4, class 4 uses 5. Letter count is a game setting, not a validated school proficiency standard."
   },
   "proficiency": {
     "scheme": "hebrew-early-literacy-v1",
     "value": "beginning-word-reader",
-    "description": "Recognizes Hebrew letters and is beginning to decode short words with niqqud; not a CEFR rating or a phonetic assessment."
+    "description": "Recognizes Hebrew letters and decodes pointed words from two to five letters; not a CEFR rating or a phonetic assessment."
   },
   "skills": [
     "hebrew-word-reading",
@@ -38,15 +38,19 @@
     "pointed-text",
     "two-letter-words",
     "three-letter-words",
-    "read-aloud"
+    "read-aloud",
+    "four-letter-words",
+    "five-letter-words"
   ],
   "letters": [
+    "א",
     "ב",
     "ג",
     "ד",
     "ה",
     "ו",
     "ח",
+    "ט",
     "י",
     "כ",
     "ל",
@@ -65,7 +69,9 @@
   "content": {
     "wordLengths": [
       2,
-      3
+      3,
+      4,
+      5
     ],
     "niqqud": true,
     "items": [
@@ -234,6 +240,173 @@
           "ו"
         ],
         "letterCount": 3
+      },
+      {
+        "word": "חַלּוֹן",
+        "letters": [
+          "ח",
+          "ל",
+          "ו",
+          "ן"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "אָרוֹן",
+        "letters": [
+          "א",
+          "ר",
+          "ו",
+          "ן"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "בַּלּוֹן",
+        "letters": [
+          "ב",
+          "ל",
+          "ו",
+          "ן"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "תַּפּוּחַ",
+        "letters": [
+          "ת",
+          "פ",
+          "ו",
+          "ח"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "חָתוּל",
+        "letters": [
+          "ח",
+          "ת",
+          "ו",
+          "ל"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "אַרְנָב",
+        "letters": [
+          "א",
+          "ר",
+          "נ",
+          "ב"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "סִירָה",
+        "letters": [
+          "ס",
+          "י",
+          "ר",
+          "ה"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "רַכֶּבֶת",
+        "letters": [
+          "ר",
+          "כ",
+          "ב",
+          "ת"
+        ],
+        "letterCount": 4
+      },
+      {
+        "word": "שׁוּלְחָן",
+        "letters": [
+          "ש",
+          "ו",
+          "ל",
+          "ח",
+          "ן"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "חֲבֵרִים",
+        "letters": [
+          "ח",
+          "ב",
+          "ר",
+          "י",
+          "ם"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "פְּרָחִים",
+        "letters": [
+          "פ",
+          "ר",
+          "ח",
+          "י",
+          "ם"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "יְלָדִים",
+        "letters": [
+          "י",
+          "ל",
+          "ד",
+          "ם"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "סְפָרִים",
+        "letters": [
+          "ס",
+          "פ",
+          "ר",
+          "י",
+          "ם"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "עִפָּרוֹן",
+        "letters": [
+          "ע",
+          "פ",
+          "ר",
+          "ו",
+          "ן"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "מַחְבֶּרֶת",
+        "letters": [
+          "מ",
+          "ח",
+          "ב",
+          "ר",
+          "ת"
+        ],
+        "letterCount": 5
+      },
+      {
+        "word": "מִטְרִיָּה",
+        "letters": [
+          "מ",
+          "ט",
+          "ר",
+          "י",
+          "ה"
+        ],
+        "letterCount": 5
       }
     ]
   },
@@ -246,7 +419,7 @@
       "speech-transcript",
       "adult-confirmed"
     ],
-    "success": "One whole-word transcript match after stripping niqqud and punctuation, or explicit adult confirmation. Automatically returns success after brief feedback; the game owns rescue and gate rewards. No phonetic pronunciation scoring."
+    "success": "One whole-word transcript match after stripping niqqud and punctuation and accepting documented full-spelling variants, or explicit adult confirmation. Automatically returns success after brief feedback; the game owns rescue and gate rewards. No phonetic pronunciation scoring."
   },
   "source": {
     "project": "hebrew-reading-lab",
@@ -263,12 +436,15 @@
     "wordLength": {
       "type": "string",
       "enum": [
+        "grade",
         "all",
         "2",
-        "3"
+        "3",
+        "4",
+        "5"
       ],
-      "default": "all",
-      "description": "Limit practice to two- or three-letter words."
+      "default": "grade",
+      "description": "Use the selected grade, or override the length for manual exploration."
     },
     "word": {
       "type": "string",
@@ -285,6 +461,13 @@
       "type": "boolean",
       "default": true,
       "description": "Offer explicit adult confirmation when speech recognition is unavailable."
+    },
+    "grade": {
+      "type": "integer",
+      "default": 1,
+      "minimum": 1,
+      "maximum": 4,
+      "description": "Selected school class: 1 → 2 letters, 2 → 3, 3 → 4, 4 → 5. Used when wordLength is grade."
     }
   },
   "examples": [
@@ -309,6 +492,38 @@
         "word": "גן",
         "allowAdultConfirmation": false
       }
+    },
+    {
+      "name": "Class 3 · four letters",
+      "params": {
+        "grade": 3,
+        "word": "חתול"
+      }
+    },
+    {
+      "name": "Class 4 · five letters",
+      "params": {
+        "grade": 4,
+        "word": "מטריה"
+      }
+    }
+  ],
+  "gradeBands": [
+    {
+      "grade": 1,
+      "wordLength": 2
+    },
+    {
+      "grade": 2,
+      "wordLength": 3
+    },
+    {
+      "grade": 3,
+      "wordLength": 4
+    },
+    {
+      "grade": 4,
+      "wordLength": 5
     }
   ]
 }

@@ -2,6 +2,7 @@ const WORDS = HebrewWords;
 const normalize = HebrewReading.normalize;
 const el = id => document.getElementById(id);
 let pool = WORDS, index = 0, active = null, timeout = null, successResult=null;
+let readingGrade=1;
 let wordSolved = false, celebrationTimer, completionTimer, attempts=0, hintsUsed=0;
 function speakLetter(letter, word, position, button) {
   if (active || wordSolved) return;
@@ -60,7 +61,15 @@ const HINTS = {
   'כלב':['🐕','חיה שנובחת.'], 'חלב':['🥛','משקה לבן.'], 'ספר':['📖','יש בו דפים וסיפורים.'],
   'ילד':['🧒','אדם צעיר שגדל ולומד.'], 'שמש':['☀️','מאירה ומחממת אותנו ביום.'],
   'דלת':['🚪','פותחים אותה כדי להיכנס לחדר.'], 'תות':['🍓','פרי אדום קטן עם נקודות.'],
-  'סוס':['🐎','חיה שאפשר לרכוב עליה.']
+  'סוס':['🐎','חיה שאפשר לרכוב עליה.'],
+  'חלון':['🪟','דרכו רואים מה קורה בחוץ.'], 'ארון':['🚪','רהיט ששומרים בו בגדים.'],
+  'בלון':['🎈','ממלאים אותו באוויר והוא מתנפח.'], 'תפוח':['🍎','פרי עגול, אדום או ירוק.'],
+  'חתול':['🐈','חיה שאומרת מיאו.'], 'ארנב':['🐇','חיה עם אוזניים ארוכות.'],
+  'סירה':['⛵','כלי קטן ששט על המים.'], 'רכבת':['🚂','נוסעת על פסים ויש לה קרונות.'],
+  'שולחן':['🍽️','רהיט שאוכלים או כותבים עליו.'], 'חברים':['🧒🧒','אנשים שאוהבים לשחק יחד.'],
+  'פרחים':['🌷🌼','צומחים בגינה ויש להם עלי כותרת.'], 'ילדים':['🧒👧','צעירים שהולכים לגן או לבית הספר.'],
+  'ספרים':['📚','יש בהם דפים וסיפורים לקריאה.'], 'עפרון':['✏️','כותבים בו ואפשר למחוק את הכתב.'],
+  'מחברת':['📓','כותבים בה שיעורים וציורים.'], 'מטריה':['☂️','פותחים אותה כדי לא להירטב בגשם.']
 };
 let misses = 0, soundEnabled = true, audio = null;
 function prepareAudio() {
@@ -212,7 +221,7 @@ function stopMedia(){
 function readingSucceeded(method,word){
   if(successResult)return;
   wordSolved=true;
-  successResult={outcome:'success',method,itemId:normalize(word),attempts,details:{wordLength:normalize(word).length,hintsUsed}};
+  successResult={outcome:'success',method,itemId:normalize(word),attempts,details:{grade:readingGrade,wordLength:normalize(word).length,hintsUsed}};
   el('mic').disabled=true;el('adult-submit').disabled=true;
   // One challenge, one result. The host owns rewards and what happens next.
   completionTimer=setTimeout(()=>Drill.complete(successResult),800);
@@ -223,6 +232,7 @@ el('adult-submit').onclick=()=>{
   status('✓ הקריאה אושרה. כל הכבוד!', 'success');celebrate();
 };
 Drill.onStart(params=>{
+  readingGrade=params.grade??1;
   const selected=HebrewReading.plan(WORDS,params);pool=selected.pool;index=selected.index;
   soundEnabled=params.sound??true;
   el('sound-button').setAttribute('aria-pressed',String(soundEnabled));

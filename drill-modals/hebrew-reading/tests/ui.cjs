@@ -17,5 +17,12 @@ start({wordIndex:1});document.getElementById('adult-submit').click();flushComple
 document.getElementById('adult-confirm').checked=true;document.getElementById('adult-submit').click();flushCompletion();assert.equal(result.method,'adult-confirmed');assert.equal(result.itemId,'גן');assert.equal(completions,2);
 start({wordIndex:2});document.getElementById('adult-confirm').checked=true;document.getElementById('adult-submit').click();dispose();flushCompletion();assert.equal(completions,2,'Disposal cancels pending completion');
 start({wordIndex:3});document.getElementById('mic').click();dispose();assert.equal(aborted,1);
+for(const grade of [1,2,3,4]){
+ start({grade});const word=document.getElementById('word').textContent;assert.equal(ctx.HebrewReading.normalize(word).length,grade+1);
+ document.getElementById('hint-button').click();assert(!document.getElementById('hint').hidden);
+ document.getElementById('adult-confirm').checked=true;document.getElementById('adult-submit').click();flushCompletion();
+ assert.equal(result.details.grade,grade);assert.equal(result.details.wordLength,grade+1);
+}
+const hints=vm.runInContext('Object.keys(HINTS)',ctx);for(const word of ctx.HebrewWords)assert(hints.includes(ctx.HebrewReading.normalize(word)),'Missing hint: '+word);
 const html=fs.readFileSync(require.resolve('../index.html'),'utf8');assert(!/id="(?:next|choose|return-to-game)"|class="filter"/.test(html),'One question with no drill navigation');
 console.log('PASS: Hebrew retries, denied mic, automatic one-time success, adult confirmation, cancellation of pending result and media cleanup.');
