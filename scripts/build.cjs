@@ -3,6 +3,7 @@ const fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),output=path.join(root,'build');
 fs.rmSync(output,{recursive:true,force:true});
 fs.cpSync(path.join(root,'dist'),output,{recursive:true});
+fs.cpSync(path.join(root,'character-studio'),path.join(output,'character-studio'),{recursive:true,filter:source=>!source.endsWith('.md')});
 fs.cpSync(path.join(root,'drill-modals'),path.join(output,'drills'),{recursive:true,filter:source=>{
  const relative=path.relative(path.join(root,'drill-modals'),source);
  return !relative.split(path.sep).some(p=>['tests','testing'].includes(p))&&!/\.(cjs|md)$/.test(source);

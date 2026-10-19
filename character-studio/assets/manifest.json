@@ -1,0 +1,357 @@
+{
+  "version": 2,
+  "generatedWith": "Built-in image generation",
+  "canvasSize": 1024,
+  "characters": [
+    {
+      "id": "pip",
+      "name": "Pip",
+      "description": "a friendly purple round blob creature with large ivory eyes, a small smiling mouth, tiny stubby arms and rounded feet, smooth lilac clay skin",
+      "src": "assets/pip.png",
+      "eyes": [
+        504,
+        444
+      ],
+      "head": [
+        504,
+        275
+      ],
+      "neck": [
+        504,
+        635
+      ],
+      "faceWidth": 500,
+      "fits": {
+        "crown": {
+          "width": 0.74,
+          "dy": -8
+        },
+        "beanie": {
+          "width": 0.96,
+          "dy": 40,
+          "pivot": 0.8,
+          "heightScale": 0.62
+        },
+        "wizard": {
+          "width": 1.02,
+          "dy": 35,
+          "pivot": 0.8,
+          "heightScale": 0.85
+        },
+        "headphones": {
+          "width": 1.48,
+          "dy": -65,
+          "pivot": 0
+        },
+        "necklace": {
+          "width": 0.55,
+          "heightScale": 0.75
+        },
+        "medal": {
+          "width": 0.47,
+          "heightScale": 0.8
+        },
+        "tie": {
+          "width": 0.18
+        },
+        "bowtie": {
+          "width": 0.43,
+          "dy": 35
+        }
+      }
+    },
+    {
+      "id": "moss",
+      "name": "Moss",
+      "description": "a friendly mint-green rounded-square little monster with large ivory eyes, small smile, tiny arms and rounded feet, smooth mint clay skin",
+      "src": "assets/moss.png",
+      "eyes": [
+        504,
+        482
+      ],
+      "head": [
+        504,
+        300
+      ],
+      "neck": [
+        504,
+        625
+      ],
+      "faceWidth": 470,
+      "fits": {
+        "crown": {
+          "width": 0.72,
+          "dy": -8
+        },
+        "beanie": {
+          "width": 1.04,
+          "dy": 40,
+          "pivot": 0.8,
+          "heightScale": 0.62
+        },
+        "wizard": {
+          "width": 1.08,
+          "dy": 25,
+          "pivot": 0.8,
+          "heightScale": 0.85
+        },
+        "headphones": {
+          "width": 1.42,
+          "dy": -64,
+          "pivot": 0
+        },
+        "necklace": {
+          "width": 0.59,
+          "heightScale": 0.75
+        },
+        "medal": {
+          "width": 0.5,
+          "heightScale": 0.8
+        },
+        "tie": {
+          "width": 0.2
+        },
+        "bowtie": {
+          "width": 0.43,
+          "dy": 35
+        }
+      }
+    },
+    {
+      "id": "sunny",
+      "name": "Sunny",
+      "description": "a friendly apricot-orange pear-shaped creature with large ivory eyes, small smile, tiny arms and rounded feet, smooth peach clay skin",
+      "src": "assets/sunny.png",
+      "eyes": [
+        504,
+        450
+      ],
+      "head": [
+        504,
+        320
+      ],
+      "neck": [
+        504,
+        595
+      ],
+      "faceWidth": 390,
+      "fits": {
+        "crown": {
+          "width": 0.72,
+          "dy": -15
+        },
+        "beanie": {
+          "width": 1.05,
+          "dy": -15,
+          "pivot": 0.8,
+          "heightScale": 0.62
+        },
+        "wizard": {
+          "width": 1.1,
+          "dy": -10,
+          "pivot": 0.8,
+          "heightScale": 0.85
+        },
+        "headphones": {
+          "width": 1.4,
+          "dy": -100,
+          "pivot": 0
+        },
+        "necklace": {
+          "width": 0.75,
+          "heightScale": 0.75
+        },
+        "medal": {
+          "width": 0.63,
+          "heightScale": 0.8
+        },
+        "tie": {
+          "width": 0.24
+        },
+        "bowtie": {
+          "width": 0.43,
+          "dy": 15
+        }
+      }
+    },
+    {
+      "id": "luna",
+      "name": "Luna",
+      "description": "a friendly sky-blue softly rounded star-shaped creature with large ivory eyes, small smile, tiny arms and rounded feet, smooth blue clay skin",
+      "src": "assets/luna.png",
+      "eyes": [
+        504,
+        505
+      ],
+      "head": [
+        504,
+        265
+      ],
+      "neck": [
+        504,
+        655
+      ],
+      "faceWidth": 390,
+      "fits": {
+        "crown": {
+          "width": 0.68,
+          "dy": -5
+        },
+        "beanie": {
+          "width": 0.95,
+          "dy": 70,
+          "pivot": 0.8,
+          "heightScale": 0.62
+        },
+        "wizard": {
+          "width": 0.94,
+          "dy": 15,
+          "pivot": 0.8,
+          "heightScale": 0.85
+        },
+        "headphones": {
+          "width": 1.8,
+          "dy": -65,
+          "pivot": 0
+        },
+        "necklace": {
+          "width": 0.56,
+          "heightScale": 0.75
+        },
+        "medal": {
+          "width": 0.48,
+          "heightScale": 0.8
+        },
+        "tie": {
+          "width": 0.19
+        },
+        "bowtie": {
+          "width": 0.43,
+          "dy": 35
+        }
+      }
+    }
+  ],
+  "accessories": [
+    {
+      "id": "glasses",
+      "name": "Round glasses",
+      "description": "a pair of chunky coral-red round eyeglasses, two completely transparent empty lens holes, front view",
+      "category": "upper",
+      "src": "assets/glasses.png",
+      "anchor": "eyes",
+      "width": 1,
+      "pivot": 0.5
+    },
+    {
+      "id": "goggles",
+      "name": "Explorer goggles",
+      "description": "a pair of brass and teal aviator goggles, two transparent empty lens holes, front view",
+      "category": "upper",
+      "src": "assets/goggles.png",
+      "anchor": "eyes",
+      "width": 1.06,
+      "pivot": 0.5
+    },
+    {
+      "id": "crown",
+      "name": "Star crown",
+      "description": "a small golden three-point crown with a turquoise star jewel, front view",
+      "category": "upper",
+      "src": "assets/crown.png",
+      "anchor": "head",
+      "width": 0.68,
+      "pivot": 0.88
+    },
+    {
+      "id": "beanie",
+      "name": "Lilac beanie",
+      "description": "a lavender knitted beanie hat with yellow pompom and folded brim, front view",
+      "category": "upper",
+      "src": "assets/beanie.png",
+      "anchor": "head",
+      "width": 0.72,
+      "pivot": 0.82
+    },
+    {
+      "id": "headphones",
+      "name": "Headphones",
+      "description": "a curved teal headphone headband with two round coral earcups, open transparent center, front view",
+      "category": "upper",
+      "src": "assets/headphones-v2.png",
+      "anchor": "head",
+      "width": 1.52,
+      "pivot": 0.1
+    },
+    {
+      "id": "wizard",
+      "name": "Wizard hat",
+      "description": "a violet pointed wizard hat with golden stars and broad curved brim, front view",
+      "category": "upper",
+      "src": "assets/wizard.png",
+      "anchor": "head",
+      "width": 0.9,
+      "pivot": 0.82
+    },
+    {
+      "id": "bowtie",
+      "name": "Bow tie",
+      "description": "a coral red and cream polka-dot bow tie, front view",
+      "category": "lower",
+      "src": "assets/bowtie.png",
+      "anchor": "neck",
+      "width": 0.47,
+      "pivot": 0.5
+    },
+    {
+      "id": "tie",
+      "name": "Lightning tie",
+      "description": "a teal necktie with a tiny golden lightning emblem and triangular knot, front view",
+      "category": "lower",
+      "src": "assets/tie.png",
+      "anchor": "neck",
+      "width": 0.23,
+      "pivot": 0.1
+    },
+    {
+      "id": "necklace",
+      "name": "Moon necklace",
+      "description": "a U-shaped fine gold necklace chain with crescent moon pendant, open transparent center, front view",
+      "category": "lower",
+      "src": "assets/necklace.png",
+      "anchor": "neck",
+      "width": 0.75,
+      "pivot": 0.12
+    },
+    {
+      "id": "scarf",
+      "name": "Rainbow scarf",
+      "description": "Front-facing rainbow scarf overlay with no visible rear collar or neck opening",
+      "category": "lower",
+      "src": "assets/scarf-v2.png",
+      "anchor": "neck",
+      "width": 0.75,
+      "pivot": 0.14
+    },
+    {
+      "id": "medal",
+      "name": "Explorer medal",
+      "description": "a short navy ribbon in a V shape holding a gold star medal, front view",
+      "category": "lower",
+      "src": "assets/medal.png",
+      "anchor": "neck",
+      "width": 0.6,
+      "pivot": 0.08
+    },
+    {
+      "id": "bandana",
+      "name": "Adventure bandana",
+      "description": "Front-facing adventure bandana overlay with no visible rear collar or neck opening",
+      "category": "lower",
+      "src": "assets/bandana-v2.png",
+      "anchor": "neck",
+      "width": 0.78,
+      "pivot": 0.14
+    }
+  ]
+}

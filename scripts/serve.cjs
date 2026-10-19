@@ -2,6 +2,7 @@ const http=require('node:http');
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const gameRoot=path.resolve(__dirname,'../dist'),drillRoot=path.resolve(__dirname,'../drill-modals');
+const studioRoot=path.resolve(__dirname,'../character-studio');
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const server=http.createServer(async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return;}
@@ -9,8 +10,10 @@ const server=http.createServer(async(req,res)=>{
     const url=new URL(req.url,'http://localhost');
     const pathname=decodeURIComponent(url.pathname);
     if(pathname==='/drills'||pathname==='/dialogs/'||pathname==='/dialogs'){res.writeHead(302,{Location:pathname==='/drills'?'/drills/':'/drills/?drill=arithmetic'});res.end();return;}
-    const isDrill=pathname.startsWith('/drills/'),root=isDrill?drillRoot:gameRoot;
-    const relative=isDrill?pathname.slice('/drills'.length):pathname;
+    if(pathname==='/character-studio'){res.writeHead(302,{Location:'/character-studio/'+url.search});res.end();return;}
+    const isStudio=pathname.startsWith('/character-studio/');
+    const isDrill=pathname.startsWith('/drills/'),root=isStudio?studioRoot:isDrill?drillRoot:gameRoot;
+    const relative=isStudio?pathname.slice('/character-studio'.length):isDrill?pathname.slice('/drills'.length):pathname;
     if(isDrill&&(relative.split('/').some(p=>['tests','testing'].includes(p))||/\.(cjs|md)$/.test(relative))){res.writeHead(404);res.end();return;}
     let file=path.resolve(root,'.'+relative);
     if(!file.startsWith(root+path.sep)&&file!==root){res.writeHead(403);res.end();return;}

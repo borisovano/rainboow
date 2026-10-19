@@ -54,3 +54,7 @@ Testing shortcuts (type during play; physical English letter keys also work with
 Direct stage URLs: `/earth/`, `/moon/`, `/rainbow/`, `/maze/`. Each redirects to `/?stage=<name>`; select a class to start directly in that world with zero points and no powers. Unknown stage values start on Earth. These entries bypass earlier worlds, while the chosen world's own challenges stay active.
 
 Hebrew reading follows the selected class in every world: א׳ = 2 letters, ב׳ = 3, ג׳ = 4, ד׳ = 5. All 36 words have niqqud and hints; the runner can override the length for manual exploration.
+
+### Character Studio
+
+Open `/character-studio/` for an independent image playground: four original characters, six head/eye accessories, and six neck/body accessories. Stack pieces, drag or adjust their fit, share a look link, and download PNGs or a look recipe. Source, original generated images, and prompts live in [`character-studio/`](character-studio/README.md). The game characters are unchanged.
