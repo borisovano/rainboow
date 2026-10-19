@@ -3,7 +3,7 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 const gameRoot=path.resolve(__dirname,'../dist'),drillRoot=path.resolve(__dirname,'../drill-modals');
 const studioRoot=path.resolve(__dirname,'../character-studio');
-const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.svg':'image/svg+xml','.json':'application/json','.glb':'model/gltf-binary'};
 const server=http.createServer(async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);res.end();return;}
   try {

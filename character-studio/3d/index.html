@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Meet Pip in 3D. Explore an original Blender character, play four animations, and download the editable model.">
+  <title>Pip in 3D · Character Studio</title>
+  <link rel="stylesheet" href="../studio.css">
+  <link rel="stylesheet" href="viewer.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head>
+<body>
+  <header>
+    <a class="brand" href="../"><span class="brand-icon">✳</span><span>Moon & Rainbow <small>THE CREATIVE PLAYGROUND</small></span></a>
+    <nav aria-label="Main"><a href="../">Image studio ↗</a><a href="../../">Game ↗</a></nav>
+  </header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">CHARACTER STUDIO / A NEW DIMENSION</p><h1>A little more <em>Pip.</em></h1><p>From a flat idea to a friend you can turn around.</p></div><span class="edition">CHARACTER STUDY <b>01 / Pip in 3D</b></span></div>
+    <div class="viewer-layout">
+      <section class="model-panel" aria-label="Interactive 3D character">
+        <div class="panel-top"><span>MEET PIP</span><span class="pill">MADE IN BLENDER</span></div>
+        <div id="stage" class="stage">
+          <img id="fallback" src="assets/pip-render.png" alt="Pip: a rounded purple creature with large ivory eyes, little arms and feet, and a cheerful smile.">
+          <canvas id="model" aria-label="Interactive Pip model. Drag to rotate, scroll or pinch to zoom. Use the view buttons below for keyboard control." tabindex="0"></canvas>
+          <span class="stage-label" id="model-state" role="status">Opening the third dimension…</span>
+          <span class="stage-hint">Drag to orbit · Scroll to get closer</span>
+        </div>
+        <div class="view-bar" role="group" aria-label="Camera view">
+          <span>Look around</span>
+          <button data-view="front" disabled>Front</button><button data-view="angle" disabled>¾ view</button><button data-view="side" disabled>Side</button><button data-view="back" disabled>Back</button>
+          <button id="rotate" aria-pressed="false" disabled>↻ Rotate</button>
+        </div>
+      </section>
+      <aside class="controls-panel" aria-label="Character controls">
+        <div class="character-card"><div><span class="eyebrow">THE LITTLE EXPLORER</span><h2>Pip</h2><p>Big eyes. Tiny feet.<br>A whole new point of view.</p></div><img src="../assets/pip.png" alt="Pip’s original 2D concept" width="120" height="140"><span class="reference-caption">Original concept ↗</span></div>
+        <section class="motion-section" aria-labelledby="motion-title"><div class="section-heading"><h2 id="motion-title"><span>01</span> Give Pip a little life</h2></div>
+          <div class="motions" role="group" aria-label="Animation">
+            <button data-clip="Idle" aria-pressed="true" disabled><span>◌</span>Idle<small>Just being Pip</small></button>
+            <button data-clip="Walk" aria-pressed="false" disabled><span>↝</span>Walk<small>Places to be</small></button>
+            <button data-clip="Jump" aria-pressed="false" disabled><span>↑</span>Jump<small>A little lift</small></button>
+            <button data-clip="Wave" aria-pressed="false" disabled><span>✳</span>Wave<small>Hello, you</small></button>
+          </div>
+          <div class="playback"><button class="secondary" id="pause" disabled>Pause</button><label>Speed <select id="speed" disabled><option value="0.5">½×</option><option value="1" selected>1×</option><option value="1.5">1½×</option></select></label><label class="wire-label"><input type="checkbox" id="wireframe" disabled> See mesh</label></div>
+        </section>
+        <section class="downloads" aria-labelledby="download-title"><div class="section-heading"><h2 id="download-title"><span>02</span> Make it your own</h2></div>
+          <a class="primary" href="assets/pip.glb" download>Download 3D model <span>↓</span></a>
+          <div class="download-row"><a href="source/pip.blend" download>Blender project ↓</a><a href="source/build_pip.py" download>Build script ↓</a></div>
+          <p>Open the Blender project to change Pip’s shape, colors, and movements. The GLB includes all four animations.</p>
+        </section>
+        <div class="model-facts"><span><strong>4</strong> animations</span><span><strong>25.5k</strong> triangles</span><span><strong>524 KB</strong> model</span></div>
+      </aside>
+    </div>
+    <footer><span>A concept, brought to life. Made to keep exploring.</span><a href="../">← Back to the image studio</a><span>CHARACTER STUDIO · 3D STUDY 01</span></footer>
+  </main>
+  <noscript><p class="no-script">The interactive preview needs JavaScript. You can still view the render and download Pip’s files above.</p></noscript>
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>

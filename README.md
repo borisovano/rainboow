@@ -58,3 +58,5 @@ Hebrew reading follows the selected class in every world: א׳ = 2 letters, ב׳
 ### Character Studio
 
 Open `/character-studio/` for an independent image playground: four original characters, six head/eye accessories, and six neck/body accessories. Stack pieces, drag or adjust their fit, share a look link, and download PNGs or a look recipe. Source, original generated images, and prompts live in [`character-studio/`](character-studio/README.md). The game characters are unchanged.
+
+Open `/character-studio/3d/` to explore **Pip in 3D**: a real Blender model with idle, walk, jump, and wave animations. Orbit the model, inspect its mesh, and download the animated GLB, editable Blender project, or reproducible build script. See the [3D asset workflow](character-studio/3d/README.md).
