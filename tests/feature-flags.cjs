@@ -35,3 +35,17 @@ for(const stage of ['earth','moon','rainbow','maze']) {
   assert.equal(new URL(redirected).searchParams.get('ff.pipCharacter'),'1');assert.equal(new URL(redirected).searchParams.get('stage'),stage);
 }
 console.log('PASS: flag defaults, saved settings, URL priority, cross-tab updates, reset, invalid/blocked storage, test links and all direct stage redirects.');
+const globalEnv=environment(),globals=createStore(globalEnv);
+assert.deepEqual(globals.globalParams(),{character:'pip',stage:'earth'});
+globals.setGlobalParams({character:'sunny',stage:'rainbow'});
+const readerEnv=environment(),reader=createStore(readerEnv);assert.equal(reader.globalParams().character,'sunny');assert.equal(reader.globalParams().stage,'rainbow');
+globals.setGlobalParams({character:'luna',stage:'maze'});readerEnv.handlers.storage({key:STORAGE_KEY});assert.equal(reader.globalParams().character,'luna');
+const pinnedGlobals=createStore(environment('?character=moss&stage=moon'));assert.equal(pinnedGlobals.globalParams().character,'moss');assert.equal(pinnedGlobals.globalParams().stage,'moon');
+assert.equal(pinnedGlobals.globalSource('character'),'url');assert.throws(()=>globals.setGlobalParams({character:'missing'}));assert.equal(globals.globalParams().character,'luna');
+const link=new URL(globals.gameLink('https://example.test/'));assert.equal(link.searchParams.get('character'),'luna');assert.equal(link.searchParams.get('stage'),'maze');
+const copied=createStore(environment(link.search));assert.deepEqual(copied.globalParams(),globals.globalParams());
+globals.resetGlobals();readerEnv.handlers.storage({key:STORAGE_KEY});assert.equal(reader.globalParams().character,'pip');assert.equal(reader.globalParams().stage,'earth');
+let workshop;
+vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../dist/features/workshop-redirect.js'),'utf8'),{URL,location:{href:'https://example.test/drills/workshop',search:'?ff.pipCharacter=1',replace:url=>workshop=url}});
+assert.equal(new URL(workshop).pathname,'/control-center/');assert.equal(new URL(workshop).searchParams.get('section'),'drills');assert.equal(new URL(workshop).searchParams.get('ff.pipCharacter'),'1');
+console.log('PASS: global parameters, character/world persistence, cross-tab updates, URL priority, copied links, reset and workshop redirect.');

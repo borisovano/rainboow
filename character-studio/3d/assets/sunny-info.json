@@ -1,0 +1,19 @@
+{
+  "character": "Sunny",
+  "id": "sunny",
+  "bodyDepth": 2.16,
+  "bodyWidth": 2.5,
+  "blender": "5.2.1 LTS",
+  "triangles": 35136,
+  "meshes": 27,
+  "materials": 8,
+  "clips": [
+    "Idle",
+    "Walk",
+    "Jump",
+    "Wave"
+  ],
+  "glbBytes": 784996,
+  "source": "source/sunny.blend",
+  "reference": "../assets/sunny.png"
+}

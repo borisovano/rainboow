@@ -1,8 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const THREE=require('../dist/vendor/three.r128.min.js');global.THREE=THREE;require('../dist/vendor/GLTFLoader.r128.js');
 const {create}=require('../dist/features/pip-avatar.js');
-const bytes=fs.readFileSync(path.join(__dirname,'../character-studio/3d/assets/pip.glb'));
-const parse=()=>new Promise((resolve,reject)=>new THREE.GLTFLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'',resolve,reject));
+const parse=(id='pip')=>{const bytes=fs.readFileSync(path.join(__dirname,'../character-studio/3d/assets/'+id+'.glb'));return new Promise((resolve,reject)=>new THREE.GLTFLoader().parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'',resolve,reject));};
 function fixture(load=parse) {const rig=new THREE.Group(),classic=new THREE.Mesh(new THREE.SphereGeometry(1.2),new THREE.MeshLambertMaterial());classic.position.y=1.2;rig.add(classic);const statuses=[];return {rig,classic,statuses,avatar:create({THREE,rig,classicParts:[classic],load,onStatus:status=>statuses.push(status)})};}
 (async()=>{
   let loads=0;const f=fixture(()=>{loads++;return parse();});
@@ -30,5 +29,16 @@ function fixture(load=parse) {const rig=new THREE.Group(),classic=new THREE.Mesh
   assert(racing.classic.visible);assert(!racing.rig.getObjectByName('Pip_GameVisual').visible,'Disabling during load must win');
   const broken=fixture(()=>Promise.reject(new Error('Simulated missing asset')));const warn=console.warn;console.warn=()=>{};try{await broken.avatar.setEnabled(true);}finally{console.warn=warn;}
   assert.equal(broken.statuses.at(-1),'fallback');assert(broken.classic.visible);
+  const all=fixture();
+  for(const id of ['pip','moss','sunny','luna']){
+    await all.avatar.setEnabled(true,id);assert.equal(all.statuses.at(-1),id);assert(!all.classic.visible);
+    const root=all.rig.getObjectByName(id[0].toUpperCase()+id.slice(1)+'_Root');assert(root);
+    for(let i=0;i<90;i++)all.avatar.update({delta:1/60,state:'PLAYING',jumping:true});assert(Math.abs(root.position.y)<.00001,id+' does not double-jump');
+    assert.equal(all.rig.children.filter(c=>c.visible).length,1,'Only the selected model is visible');
+  }
+  let finishPip,finishMoss;const race=fixture(id=>new Promise(resolve=>{if(id==='pip')finishPip=resolve;else finishMoss=resolve;}));
+  const first=race.avatar.setEnabled(true,'pip');await Promise.resolve();const second=race.avatar.setEnabled(true,'moss');await Promise.resolve();
+  finishMoss(await parse('moss'));await second;finishPip(await parse('pip'));await first;
+  assert.equal(race.statuses.at(-1),'moss');assert(race.rig.getObjectByName('Moss_GameVisual').visible);assert(!race.rig.getObjectByName('Pip_GameVisual').visible);
   console.log('PASS: actual r128 GLB load, lazy flag, matching size/facing, walk/wave/jump tracks, pause, cloak, growth/death, reuse, loading race and classic fallback.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

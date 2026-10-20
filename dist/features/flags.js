@@ -5,8 +5,9 @@
 })(typeof window!=='undefined'?window:globalThis,function(drills,contract){
   'use strict';
   const STORAGE_KEY='moon-rainbow.features.v1';
+  const globalParameters={defaultParams:{stage:'earth',character:'pip'},parameters:{character:{type:'string',title:'Character',enum:['pip','moss','sunny','luna'],description:'Used when the 3D characters feature is enabled.'},stage:{type:'string',title:'Starting world',enum:['earth','moon','rainbow','maze'],description:'Starting world for new games. A world specified in the game URL takes priority.'}}};
   const definitions=Object.freeze([
-    {id:'pipCharacter',title:'Play as Pip',category:'Characters',defaultValue:false,description:'Bring the animated Blender character into every world.'},
+    {id:'pipCharacter',title:'3D characters',category:'Characters',defaultValue:false,description:'Use the selected animated Blender character in every world. Choose a character under Global parameters.'},
     ...drills.flatMap(drill=>Object.entries(drill.features).map(([id,feature])=>({id:drill.id+'.'+id,owner:drill.id,featureId:id,title:feature.title,description:feature.description,category:drill.title,defaultValue:feature.defaultEnabled})))
   ].map(Object.freeze));
   const manifest=id=>drills.find(d=>d.id===id||d.aliases.includes(id));
@@ -14,13 +15,14 @@
   function parseSearch(search){const params=new URLSearchParams(search||''),overrides={};for(const flag of definitions){const value=params.get('ff.'+flag.id);if(value==='1'||value==='true')overrides[flag.id]=true;if(value==='0'||value==='false')overrides[flag.id]=false;}return overrides;}
   function validDrills(value){const result={};if(value&&typeof value==='object')for(const drill of drills)if(Object.hasOwn(value,drill.id))try{result[drill.id]=contract.parameters(drill,value[drill.id]);}catch{}return result;}
   function createStore(env={}){
-    let overrides={},savedDrills={},persistent=true;const listeners=new Set(),url=parseSearch(env.location?.search),query=new URLSearchParams(env.location?.search||''),urlDrills={};
+    let overrides={},savedDrills={},savedGlobals={},persistent=true;const listeners=new Set(),url=parseSearch(env.location?.search),query=new URLSearchParams(env.location?.search||''),urlDrills={};
+    const urlGlobals={};for(const [key,spec] of Object.entries(globalParameters.parameters))if(spec.enum.includes(query.get(key)))urlGlobals[key]=query.get(key);
     for(const drill of drills){const raw=query.get('dp.'+drill.id);if(raw)try{urlDrills[drill.id]=contract.parameters(drill,JSON.parse(raw));}catch{}}
     function read(){
       let stored;try{if(!env.localStorage)throw Error();stored=env.localStorage.getItem(STORAGE_KEY);}catch{persistent=false;return {};}
       try{const data=JSON.parse(stored||'null');return data?.version===1?data:{};}catch{return {};}
     }
-    function restore(){const data=read();overrides=sanitize(data.overrides);savedDrills=validDrills(data.drills);}
+    function restore(){const data=read();overrides=sanitize(data.overrides);savedDrills=validDrills(data.drills);try{savedGlobals=data.globals?contract.parameters(globalParameters,data.globals):{};}catch{savedGlobals={};}}
     restore();
     function snapshot(){return definitions.map(flag=>{
       const source=Object.hasOwn(url,flag.id)?'url':flag.owner&&urlDrills[flag.owner]?'url':Object.hasOwn(overrides,flag.id)?'browser':flag.owner&&savedDrills[flag.owner]?'browser':'default';
@@ -28,9 +30,13 @@
       return {...flag,value,source};
     });}
     function notify(){for(const cb of listeners)cb(snapshot());}
-    function persist(){try{if(!env.localStorage)throw Error();if(Object.keys(overrides).length||Object.keys(savedDrills).length)env.localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,overrides,drills:savedDrills}));else env.localStorage.removeItem(STORAGE_KEY);persistent=true;}catch{persistent=false;}notify();return persistent;}
+    function persist(){try{if(!env.localStorage)throw Error();if(Object.keys(overrides).length||Object.keys(savedDrills).length||Object.keys(savedGlobals).length)env.localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,overrides,drills:savedDrills,globals:savedGlobals}));else env.localStorage.removeItem(STORAGE_KEY);persistent=true;}catch{persistent=false;}notify();return persistent;}
     const storageChanged=event=>{if(event.key===STORAGE_KEY||event.key===null){restore();notify();}};env.addEventListener?.('storage',storageChanged);
-    const api={definitions,drills,snapshot,
+    const api={definitions,drills,snapshot,globalParameters,
+      globalParams(){return contract.parameters(globalParameters,{...savedGlobals,...urlGlobals});},
+      globalSource(key){return (key?Object.hasOwn(urlGlobals,key):Object.keys(urlGlobals).length)?'url':(key?Object.hasOwn(savedGlobals,key):Object.keys(savedGlobals).length)?'browser':'default';},
+      setGlobalParams(input){savedGlobals=contract.parameters(globalParameters,input);return persist();},
+      resetGlobals(){savedGlobals={};return persist();},
       enabled(id){return snapshot().find(flag=>flag.id===id)?.value??false;},
       drillParams(id,input={}){
         const m=manifest(id);if(!m)throw Error('Unknown drill: '+id);
@@ -47,10 +53,10 @@
       },
       resetDrill(id){const m=manifest(id);if(!m)throw Error('Unknown drill: '+id);delete savedDrills[m.id];for(const key of Object.keys(m.features))delete overrides[m.id+'.'+key];return persist();},
       setOverride(id,value){if(!definitions.some(f=>f.id===id)||(typeof value!=='boolean'&&value!==null))throw new TypeError('Expected a registered flag and boolean or null');if(value===null)delete overrides[id];else overrides[id]=value;return persist();},
-      reset(){overrides={};savedDrills={};return persist();},isPersistent(){return persistent;},
+      reset(){overrides={};savedDrills={};savedGlobals={};return persist();},isPersistent(){return persistent;},
       subscribe(cb){listeners.add(cb);return()=>listeners.delete(cb);},dispose(){listeners.clear();env.removeEventListener?.('storage',storageChanged);},
-      gameLink(base,stage='earth'){const link=new URL(base);link.search='';link.hash='';link.searchParams.set('stage',['earth','moon','rainbow','maze'].includes(stage)?stage:'earth');for(const flag of snapshot())link.searchParams.set('ff.'+flag.id,flag.value?'1':'0');for(const drill of drills)link.searchParams.set('dp.'+drill.id,JSON.stringify(api.drillParams(drill.id)));return link.href;}
+      gameLink(base,stage=api.globalParams().stage){const link=new URL(base);link.search='';link.hash='';link.searchParams.set('character',api.globalParams().character);link.searchParams.set('stage',['earth','moon','rainbow','maze'].includes(stage)?stage:'earth');for(const flag of snapshot())link.searchParams.set('ff.'+flag.id,flag.value?'1':'0');for(const drill of drills)link.searchParams.set('dp.'+drill.id,JSON.stringify(api.drillParams(drill.id)));return link.href;}
     };return api;
   }
-  return {STORAGE_KEY,definitions,parseSearch,createStore};
+  return {STORAGE_KEY,definitions,globalParameters,parseSearch,createStore};
 });

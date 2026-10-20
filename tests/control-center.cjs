@@ -2,12 +2,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const {createDocument}=require('../drill-modals/helpers/testing/dom.cjs');
 const {createStore}=require('../dist/features/flags.js'),contract=require('../drill-modals/helpers/contract.js');
 const document=createDocument({autocreate:true});
-for(const id of ['general','filter','drill-nav','editor','status','stage','play','copy-game','copy-status','copy-fallback','reset-all','output','events','result-output','input-output'])document.getElementById(id);
+for(const id of ['global-nav','studio-nav','game-summary','result-label','filter','drill-nav','editor','status','stage','play','copy-game','copy-status','copy-fallback','reset-all','output','events','result-output','input-output'])document.getElementById(id);
 document.getElementById('filter').value='';document.getElementById('stage').value='earth';
 const saved=new Map(),flags=createStore({localStorage:{getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k)}});
 let opened;
 const ctx={document,GameFeatures:flags,DrillContract:contract,DrillRunner:require('../drill-modals/runner/state.js'),URL,location:{href:'https://test/control-center/?drill=arithmetic'},history:{replaceState(){}},window:{addEventListener(){}},navigator:{clipboard:{writeText:async()=>{}}},DrillHost:{open:async(id,options)=>{opened={id,...options};return {close(){}};}}};
 vm.createContext(ctx);vm.runInContext(fs.readFileSync(require.resolve('../dist/control-center/app.js'),'utf8'),ctx);
+document.getElementById('nav-math-features').click();
 const duration=document.getElementById('param-features-breathing-durationSeconds');
 assert.equal(duration.value,'10');assert(document.getElementById('feature-breathing').checked);
 duration.value='16';duration.oninput();assert.equal(flags.drillParams('math').features.breathing.durationSeconds,16,'Input changes save without blur or replacing the focused input');
@@ -17,6 +18,10 @@ duration.value='-1';duration.oninput();assert.equal(flags.drillParams('math').fe
 duration.value='10';duration.oninput();const toggle=document.getElementById('feature-breathing');toggle.checked=false;toggle.onchange();assert.equal(flags.enabled('math.breathing'),false);
 document.getElementById('run-drill').click();assert.equal(opened.id,'math');assert.equal(opened.params.features.breathing.enabled,false);assert.equal(opened.params.features.breathing.durationSeconds,10);
 opened.onResult({schemaVersion:1,drillId:'math',outcome:'success',itemId:'add:7:5'});assert(document.getElementById('result-output').textContent.includes('success'));assert(!document.getElementById('run-drill').disabled);
-document.getElementById('filter').value='multichoice';document.getElementById('filter').oninput();assert.equal(document.getElementById('drill-nav').children.length,1);
-document.getElementById('general').click();assert(document.getElementById('flag-pipCharacter'));assert(!document.body.querySelector('#param-features-breathing-durationSeconds'));
+document.getElementById('filter').value='multichoice';document.getElementById('filter').oninput();assert.equal(document.getElementById('drill-nav').children.length,2);
+document.getElementById('nav-global-features').click();assert(document.getElementById('flag-pipCharacter'));assert(!document.body.querySelector('#param-features-breathing-durationSeconds'));
+document.getElementById('nav-math-parameters').click();
+const a=document.getElementById('param-a');a.value='21';a.oninput();assert.equal(flags.drillParams('math').a,21);assert.equal(flags.drillParams('math').features.breathing.enabled,false,'Changing ordinary parameters preserves nested feature settings');
+document.getElementById('nav-math-features').click();const more=document.getElementById('param-features-breathing-durationSeconds');more.value='20';more.oninput();assert.equal(flags.drillParams('math').a,21,'Changing feature settings preserves ordinary parameters');
+document.getElementById('nav-global-parameters').click();const char=document.getElementById('param-character');char.value='luna';char.onchange();assert.equal(flags.globalParams().character,'luna');assert.equal(new URL(document.getElementById('play').href).searchParams.get('character'),'luna');
 console.log('PASS: control center aliases, generated controls, input autosave, validation, nested toggle, label filter and standalone result handoff.');

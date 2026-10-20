@@ -4,12 +4,12 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Math dialog playground</title>
   <link rel="stylesheet" href="../styles/math-dialog.css"><link rel="stylesheet" href="../styles/workshop.css">
-</head>
+<script>if(new URLSearchParams(location.search).has('embedded'))document.documentElement.classList.add('embedded');</script><style>.embedded header,.embedded footer,.embedded main>a{display:none}.embedded body{margin:0}</style></head>
 <body>
   <main id="playground">
-    <a href="../../control-center/?drill=math">← Back to the adventure</a>
-    <p class="eyebrow">CONTRIBUTOR PLAYGROUND</p>
-    <h1>One shell. Many ways to learn.</h1>
+    <a href="../../control-center/?drill=math">← Command center</a>
+    <p class="eyebrow">MATH / EXAMPLES</p>
+    <h1>Math dialog examples</h1>
     <p class="intro">Try the game's math dialogs on their own. Each shares the same foundation; individual sections, colors, and layouts can change independently.</p>
     <div class="toolbar"><label>Group <select id="group"><option value="">All dialogs</option></select></label><span>Groups are optional tags. A dialog can belong to several.</span></div>
     <div id="examples" class="examples"></div>
@@ -17,5 +17,5 @@
     <p class="note">The playground owns its demo questions and timers. The component only presents the dialog and reports answers.</p>
   </main>
   <script src="math-dialog.js"></script><script src="presets.js"></script><script src="examples/number-entry.js"></script><script src="../registry.js"></script><script src="../helpers/contract.js"></script><script src="../../features/flags.js"></script><script src="playground.js"></script>
-</body>
+<script src="../../features/embedded-studio.js"></script></body>
 </html>

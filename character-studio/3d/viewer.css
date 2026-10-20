@@ -3,3 +3,5 @@
 @media(max-width:1000px){.viewer-layout{gap:22px;grid-template-columns:minmax(0,1.25fr) minmax(275px,1fr)}.model-panel{padding:14px}.stage{height:490px}.view-bar>span{width:100%;margin-bottom:4px}.playback{gap:9px}.motions button{padding:12px 9px;grid-template-columns:25px 1fr}.wire-label{font-size:9px}}
 @media(max-width:720px){.viewer-layout{grid-template-columns:1fr;gap:20px}.stage{height:clamp(350px,95vw,540px)}.view-bar>span{width:auto;margin-bottom:0}.view-bar button{padding:8px}.character-card{padding-top:0;min-height:158px}.character-card h2{font-size:36px}.character-card img{height:140px}.motions button{padding:15px}.playback{gap:16px}.wire-label{font-size:10px}.downloads p{max-width:420px}}
 @media(max-width:390px){.view-bar>span{width:100%}.view-bar button{flex:1}.stage{height:345px}h1{font-size:29px}}
+
+.motions button{display:block}.playback{flex-wrap:wrap}.embedded .model-panel{padding:10px}.embedded .stage{min-width:0}.embedded .character-picker{flex-wrap:wrap}@media(max-width:390px){.embedded .stage{height:310px}.model-facts{flex-wrap:wrap}.download-row{flex-wrap:wrap;gap:12px}.embedded .character-card img{max-width:35%}}

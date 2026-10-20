@@ -1,58 +1,12 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Meet Pip in 3D. Explore an original Blender character, play four animations, and download the editable model.">
-  <title>Pip in 3D · Character Studio</title>
-  <link rel="stylesheet" href="../studio.css">
-  <link rel="stylesheet" href="viewer.css">
-  <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
-</head>
-<body>
-  <header>
-    <a class="brand" href="../"><span class="brand-icon">✳</span><span>Moon & Rainbow <small>THE CREATIVE PLAYGROUND</small></span></a>
-    <nav aria-label="Main"><a href="../">Image studio ↗</a><a href="../../">Game ↗</a></nav>
-  </header>
-  <main>
-    <div class="intro"><div><p class="eyebrow">CHARACTER STUDIO / A NEW DIMENSION</p><h1>A little more <em>Pip.</em></h1><p>From a flat idea to a friend you can turn around.</p></div><span class="edition">CHARACTER STUDY <b>01 / Pip in 3D</b></span></div>
-    <div class="viewer-layout">
-      <section class="model-panel" aria-label="Interactive 3D character">
-        <div class="panel-top"><span>MEET PIP</span><span class="pill">MADE IN BLENDER</span></div>
-        <div id="stage" class="stage">
-          <img id="fallback" src="assets/pip-render.png" alt="Pip: a rounded purple creature with large ivory eyes, little arms and feet, and a cheerful smile.">
-          <canvas id="model" aria-label="Interactive Pip model. Drag to rotate, scroll or pinch to zoom. Use the view buttons below for keyboard control." tabindex="0"></canvas>
-          <span class="stage-label" id="model-state" role="status">Opening the third dimension…</span>
-          <span class="stage-hint">Drag to orbit · Scroll to get closer</span>
-        </div>
-        <div class="view-bar" role="group" aria-label="Camera view">
-          <span>Look around</span>
-          <button data-view="front" disabled>Front</button><button data-view="angle" disabled>¾ view</button><button data-view="side" disabled>Side</button><button data-view="back" disabled>Back</button>
-          <button id="rotate" aria-pressed="false" disabled>↻ Rotate</button>
-        </div>
-      </section>
-      <aside class="controls-panel" aria-label="Character controls">
-        <div class="character-card"><div><span class="eyebrow">THE LITTLE EXPLORER</span><h2>Pip</h2><p>Big eyes. Tiny feet.<br>A whole new point of view.</p></div><img src="../assets/pip.png" alt="Pip’s original 2D concept" width="120" height="140"><span class="reference-caption">Original concept ↗</span></div>
-        <section class="motion-section" aria-labelledby="motion-title"><div class="section-heading"><h2 id="motion-title"><span>01</span> Give Pip a little life</h2></div>
-          <div class="motions" role="group" aria-label="Animation">
-            <button data-clip="Idle" aria-pressed="true" disabled><span>◌</span>Idle<small>Just being Pip</small></button>
-            <button data-clip="Walk" aria-pressed="false" disabled><span>↝</span>Walk<small>Places to be</small></button>
-            <button data-clip="Jump" aria-pressed="false" disabled><span>↑</span>Jump<small>A little lift</small></button>
-            <button data-clip="Wave" aria-pressed="false" disabled><span>✳</span>Wave<small>Hello, you</small></button>
-          </div>
-          <div class="playback"><button class="secondary" id="pause" disabled>Pause</button><label>Speed <select id="speed" disabled><option value="0.5">½×</option><option value="1" selected>1×</option><option value="1.5">1½×</option></select></label><label class="wire-label"><input type="checkbox" id="wireframe" disabled> See mesh</label></div>
-        </section>
-        <section class="downloads" aria-labelledby="download-title"><div class="section-heading"><h2 id="download-title"><span>02</span> Make it your own</h2></div>
-          <a class="primary" href="assets/pip.glb" download>Download 3D model <span>↓</span></a>
-          <div class="download-row"><a href="source/pip.blend" download>Blender project ↓</a><a href="source/build_pip.py" download>Build script ↓</a></div>
-          <p>Open the Blender project to change Pip’s shape, colors, and movements. The GLB includes all four animations.</p>
-        </section>
-        <div class="model-facts"><span><strong>4</strong> animations</span><span><strong>25.5k</strong> triangles</span><span><strong>524 KB</strong> model</span></div>
-      </aside>
-    </div>
-    <footer><span>A concept, brought to life. Made to keep exploring.</span><a href="../">← Back to the image studio</a><span>CHARACTER STUDIO · 3D STUDY 01</span></footer>
-  </main>
-  <noscript><p class="no-script">The interactive preview needs JavaScript. You can still view the render and download Pip’s files above.</p></noscript>
-  <script type="module" src="viewer.js"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Four animated Blender characters. Preview, select for the game, or download editable models."><title>3D Characters · Moon & Rainbow</title><link rel="stylesheet" href="../studio.css"><link rel="stylesheet" href="viewer.css"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script><script>if(new URLSearchParams(location.search).has('embedded'))document.documentElement.classList.add('embedded');</script><style>.embedded header,.embedded footer,.embedded .intro{display:none}.embedded main{padding:8px;max-width:none}.embedded body{min-width:0}.character-picker{display:flex;gap:12px;align-items:center;margin-bottom:18px}.character-picker select{font:inherit;padding:10px;border-radius:8px;max-width:240px;width:100%}.character-picker label{font-weight:650}.use-model{margin-top:12px;width:100%}#selection-status{font-size:12px;line-height:1.5}#character-description{font-size:12px}#model-state{max-width:90%}</style></head>
+<body><header><a class="brand" href="../../control-center/"><span class="brand-icon">✳</span><span>Moon & Rainbow</span></a><nav aria-label="Main"><a href="../../control-center/?section=characters">Command center</a><a href="../../">Game ↗</a></nav></header><main>
+<div class="intro"><div><h1>3D characters</h1><p>Preview the models, play their animations, and select one for the game.</p></div></div>
+<div class="character-picker"><label for="character-select">Character</label><select id="character-select"><option value="pip">Pip</option><option value="moss">Moss</option><option value="sunny">Sunny</option><option value="luna">Luna</option></select></div>
+<div class="viewer-layout"><section class="model-panel" aria-label="Interactive 3D character"><div class="panel-top"><span id="model-name">Pip</span><span class="pill">Blender model</span></div>
+<div id="stage" class="stage"><img id="fallback" src="assets/pip-render.png" alt="Rendered 3D character"><canvas id="model" aria-label="3D character. Drag to rotate, scroll or pinch to zoom. View buttons are available below." tabindex="0"></canvas><span class="stage-label" id="model-state" role="status">Loading model…</span><span class="stage-hint">Drag to rotate · Scroll to zoom</span></div>
+<div class="view-bar" role="group" aria-label="Camera view"><span>View</span><button data-view="front" disabled>Front</button><button data-view="angle" disabled>¾ view</button><button data-view="side" disabled>Side</button><button data-view="back" disabled>Back</button><button id="rotate" aria-pressed="false" disabled>↻ Rotate</button></div></section>
+<aside class="controls-panel" aria-label="Character controls"><div class="character-card"><div><h2 id="character-name">Pip</h2><p id="character-description">A rounded purple explorer.</p></div><img id="concept" src="../assets/pip.png" alt="Original character concept" width="120" height="140"><span class="reference-caption">Original concept</span></div>
+<button id="use-character" class="primary use-model">Use Pip in game</button><p id="selection-status" role="status">Sets the game character and enables the 3D characters feature.</p>
+<section class="motion-section" aria-labelledby="motion-title"><div class="section-heading"><h2 id="motion-title">Animations</h2></div><div class="motions" role="group" aria-label="Animation"><button data-clip="Idle" aria-pressed="true" disabled>◌ Idle</button><button data-clip="Walk" aria-pressed="false" disabled>↝ Walk</button><button data-clip="Jump" aria-pressed="false" disabled>↑ Jump</button><button data-clip="Wave" aria-pressed="false" disabled>✳ Wave</button></div><div class="playback"><button class="secondary" id="pause" disabled>Pause</button><label>Speed <select id="speed" disabled><option value="0.5">½×</option><option value="1" selected>1×</option><option value="1.5">1½×</option></select></label><label class="wire-label"><input type="checkbox" id="wireframe" disabled> See mesh</label></div></section>
+<section class="downloads" aria-labelledby="download-title"><div class="section-heading"><h2 id="download-title">Downloads</h2></div><a id="download-glb" class="primary" href="assets/pip.glb" download>3D model (GLB) ↓</a><div class="download-row"><a id="download-blend" href="source/pip.blend" download>Blender project ↓</a><a href="source/build_characters.py" download>Build script ↓</a></div><p>Each model includes four animations. The Blender project contains editable geometry, materials, and controls.</p></section><div class="model-facts"><span><strong>4</strong> animations</span><span><strong id="triangle-count">—</strong> triangles</span><span><strong id="model-size">—</strong> model</span></div></aside></div><footer><a href="../../control-center/?section=characters">Command center</a></footer></main><noscript><p>The interactive preview needs JavaScript. Rendered images and downloads remain available.</p></noscript>
+<script src="../../drills/registry.js"></script><script src="../../drills/helpers/contract.js"></script><script src="../../features/flags.js"></script><script type="module" src="viewer.js"></script><script src="../../features/embedded-studio.js"></script></body></html>

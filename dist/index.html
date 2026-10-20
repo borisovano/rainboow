@@ -887,12 +887,12 @@
             const label=document.getElementById('player-avatar-status');
             label.dataset.character=state;
             const pinned=GameFeatures.snapshot().find(flag=>flag.id==='pipCharacter').source==='url';
-            label.textContent=({classic:'קלאסי',loading:'טוען פיפ…',pip:'פיפ 3D',fallback:'קלאסי (תקלה)'})[state]+(pinned?' · 🔗':'');
-            document.getElementById('feature-controls-link').title=(state==='fallback'?'פיפ לא נטען, אפשר להמשיך עם הדמות הקלאסית. ':'')+(pinned?'הדמות נקבעה בקישור הבדיקה. פתחו משחק רגיל לשינויים בזמן אמת.':'פתיחת הגדרות הניסוי והדמות');
+            label.textContent=({classic:'קלאסי',loading:'טוען דמות…',pip:'פיפ 3D',moss:'מוס 3D',sunny:'סאני 3D',luna:'לונה 3D',fallback:'קלאסי (תקלה)'})[state]+(pinned?' · 🔗':'');
+            document.getElementById('feature-controls-link').title=(state==='fallback'?'המודל לא נטען, אפשר להמשיך עם הדמות הקלאסית. ':'')+(pinned?'הדמות נקבעה בקישור הבדיקה. פתחו משחק רגיל לשינויים בזמן אמת.':'פתיחת הגדרות הניסוי והדמות');
         }
     }) : null;
     if(pipAvatar) {
-        const applyCharacterFlag=()=>pipAvatar.setEnabled(GameFeatures.enabled('pipCharacter'));
+        const applyCharacterFlag=()=>pipAvatar.setEnabled(GameFeatures.enabled('pipCharacter'),GameFeatures.globalParams().character);
         GameFeatures.subscribe(applyCharacterFlag);
         applyCharacterFlag();
     }
@@ -1021,7 +1021,7 @@
         await Tone.start();
         document.getElementById('start-modal').classList.remove('active');
         gameState = 'PLAYING';
-        startAtStage(new URLSearchParams(window.location.search).get('stage'));
+        startAtStage(GameFeatures.globalParams().stage);
     };
     
     window.continueFromPowerup = function() {

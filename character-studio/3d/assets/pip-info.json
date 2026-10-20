@@ -1,16 +1,19 @@
 {
   "character": "Pip",
+  "id": "pip",
+  "bodyDepth": 2.62,
+  "bodyWidth": 2.8,
   "blender": "5.2.1 LTS",
-  "triangles": 25466,
-  "meshes": 19,
-  "materials": 8,
+  "triangles": 30818,
+  "meshes": 23,
+  "materials": 9,
   "clips": [
     "Idle",
     "Walk",
     "Jump",
     "Wave"
   ],
-  "glbBytes": 536436,
+  "glbBytes": 638380,
   "source": "source/pip.blend",
   "reference": "../assets/pip.png"
 }

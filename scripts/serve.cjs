@@ -10,6 +10,7 @@ const server=http.createServer(async(req,res)=>{
   try {
     const url=new URL(req.url,'http://localhost');
     const pathname=decodeURIComponent(url.pathname);
+    if(['/drills/workshop','/drills/workshop/','/drills/workshop.html'].includes(pathname)){const q=new URLSearchParams(url.search);if(!q.has('drill'))q.set('section','drills');res.writeHead(302,{Location:'/control-center/?'+q});res.end();return;}
     if(pathname==='/drills'||pathname==='/dialogs/'||pathname==='/dialogs'){res.writeHead(302,{Location:pathname==='/drills'?'/drills/':'/drills/?drill=math'});res.end();return;}
     if(pathname==='/character-studio'){res.writeHead(302,{Location:'/character-studio/'+url.search});res.end();return;}
     const isStudio=pathname.startsWith('/character-studio/');
@@ -31,5 +32,5 @@ const server=http.createServer(async(req,res)=>{
 server.on('error',error=>{console.error(error.message);process.exitCode=1;});
 server.listen(Number(process.env.PORT??8765),'127.0.0.1',()=>{
   const url=`http://127.0.0.1:${server.address().port}`;
-  console.log(`Game: ${url}/\nDrill workshop: ${url}/drills/\nMaze shortcut: ${url}/?stage=maze`);
+  console.log(`Game: ${url}/\nCommand center: ${url}/control-center/\nMaze shortcut: ${url}/?stage=maze`);
 });

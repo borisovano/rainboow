@@ -11,7 +11,7 @@ const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRend
 const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
 const handlers={};
 const ctx={URLSearchParams,THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(name,fn){handlers[name]=fn;}},requestAnimationFrame(){},setTimeout(){},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
-let opened;ctx.DrillHost={open(id,options){opened={id,...options};return Promise.resolve();}};ctx.GameFeatures=require('../dist/features/flags.js').createStore();vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/math',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+let opened;ctx.DrillHost={open(id,options){opened={id,...options};return Promise.resolve();}};ctx.GameFeatures=require('../dist/features/flags.js').createStore({location:{search}});vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/math',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 
 ctx.window.location={search};ctx.Tone.start=async()=>{};return ctx;
 }

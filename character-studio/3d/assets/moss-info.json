@@ -1,0 +1,19 @@
+{
+  "character": "Moss",
+  "id": "moss",
+  "bodyDepth": 2.24,
+  "bodyWidth": 2.68,
+  "blender": "5.2.1 LTS",
+  "triangles": 33920,
+  "meshes": 26,
+  "materials": 8,
+  "clips": [
+    "Idle",
+    "Walk",
+    "Jump",
+    "Wave"
+  ],
+  "glbBytes": 742652,
+  "source": "source/moss.blend",
+  "reference": "../assets/moss.png"
+}

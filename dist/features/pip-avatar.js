@@ -5,15 +5,15 @@
   'use strict';
   const CLIPS = ['Idle','Walk','Jump','Wave'];
   let loaderPromise;
-  function browserLoad(THREE) {
+  function browserLoad(THREE,id) {
     if (!loaderPromise) {
       loaderPromise = new Promise((resolve,reject) => {
         if (THREE.GLTFLoader) { resolve(); return; }
         const script = document.createElement('script');
-        const timer = setTimeout(() => { script.remove(); reject(new Error('Pip loader timed out')); },12000);
+        const timer = setTimeout(() => { script.remove(); reject(new Error('Character loader timed out')); },12000);
         script.src = new URL('vendor/GLTFLoader.r128.js',document.baseURI).href;
         script.onload = () => { clearTimeout(timer); resolve(); };
-        script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('Pip loader unavailable')); };
+        script.onerror = () => { clearTimeout(timer); script.remove(); reject(new Error('Character loader unavailable')); };
         document.head.appendChild(script);
       }).catch(error => { loaderPromise = null; throw error; });
     }
@@ -21,27 +21,29 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(),12000);
       try {
-        const response = await fetch(new URL('character-studio/3d/assets/pip.glb',document.baseURI),{signal:controller.signal});
-        if (!response.ok) throw new Error('Pip model unavailable');
+        const response = await fetch(new URL('character-studio/3d/assets/'+id+'.glb',document.baseURI),{signal:controller.signal});
+        if (!response.ok) throw new Error('Character model unavailable');
         const data = await response.arrayBuffer();
         return await new Promise((resolve,reject) => new THREE.GLTFLoader().parse(data,'',resolve,reject));
       } finally { clearTimeout(timer); }
     });
   }
-  function create({THREE,rig,classicParts,onStatus=()=>{},load=()=>browserLoad(THREE)}) {
-    let wanted = false, pending = null, visual = null, mixer = null, active = null, activeName = null;
+  function create({THREE,rig,classicParts,onStatus=()=>{},load=id=>browserLoad(THREE,id)}) {
+    let wanted = false, wantedId='pip', visual = null, mixer = null, active = null, activeName = null;
     let jumpTime = 0, lastState = null;
-    const actions = new Map(), materials = [];
+    let actions = new Map(), materials = [];
+    const cached=new Map(),pending=new Map();
     function show(enabled) {
       for (const part of classicParts) part.visible = !enabled;
-      if (visual) visual.visible = enabled;
+      for(const resource of cached.values())resource.visual.visible=enabled&&resource.visual===visual;
     }
-    function prepare(gltf) {
+    function prepare(gltf,id) {
+      const materials=[],actions=new Map();
       for (const name of CLIPS) if (!gltf.animations.some(clip => clip.name === name)) throw new Error('Missing animation: '+name);
       const bounds = new THREE.Box3().setFromObject(gltf.scene);
       const height = bounds.max.y - bounds.min.y;
-      if (!Number.isFinite(height) || height <= 0) throw new Error('Invalid Pip bounds');
-      const wrapper = new THREE.Group(); wrapper.name = 'Pip_GameVisual';
+      if (!Number.isFinite(height) || height <= 0) throw new Error('Invalid character bounds');
+      const wrapper = new THREE.Group(); wrapper.name = id[0].toUpperCase()+id.slice(1)+'_GameVisual';
       // Match the existing 2.4-unit player, with feet on the same surface and face toward -Z.
       wrapper.rotation.y = Math.PI; wrapper.scale.setScalar(2.4 / height);
       gltf.scene.position.y -= bounds.min.y;
@@ -53,26 +55,35 @@
           if (!materials.some(entry => entry.material === material)) materials.push({material,opacity:material.opacity,transparent:material.transparent,depthWrite:material.depthWrite});
         }
       });
-      mixer = new THREE.AnimationMixer(gltf.scene);
+      const mixer = new THREE.AnimationMixer(gltf.scene);
       for (const clip of gltf.animations) {
         const copy = clip.clone();
         // Game physics owns vertical position. Keep the jump pose, discard the studio's baked hop.
-        if (copy.name === 'Jump') copy.tracks = copy.tracks.filter(track => track.name !== 'Pip_Root.position');
+        if (copy.name === 'Jump') copy.tracks = copy.tracks.filter(track => !/_Root\.position$/.test(track.name));
         actions.set(copy.name,mixer.clipAction(copy));
       }
-      visual = wrapper; rig.add(visual); visual.visible = false;
+      rig.add(wrapper);wrapper.visible=false;return {visual:wrapper,mixer,actions,materials};
     }
-    async function setEnabled(enabled) {
-      wanted = !!enabled;
-      if (!wanted) { show(false); onStatus('classic'); return; }
-      if (visual) { show(true); onStatus('pip'); return; }
-      onStatus('loading');
-      if (!pending) pending = Promise.resolve().then(load).then(prepare).catch(error => {
-        if (wanted) { show(false); onStatus('fallback'); }
-        console.warn('Pip could not load; keeping the classic character.',error);
-      }).finally(() => { pending = null; });
-      await pending;
-      if (wanted && visual) { show(true); onStatus('pip'); }
+    async function setEnabled(enabled,id='pip') {
+      wanted=!!enabled;wantedId=['pip','moss','sunny','luna'].includes(id)?id:'pip';
+      const requested=wantedId;
+      if(!wanted){show(false);onStatus('classic');return;}
+      if(!cached.has(requested)){
+        show(false);onStatus('loading');
+        if(!pending.has(requested))pending.set(requested,Promise.resolve().then(()=>load(requested)).then(gltf=>{
+          const resource=prepare(gltf,requested);cached.set(requested,resource);return resource;
+        }).catch(error=>{
+          if(wanted&&wantedId===requested){show(false);onStatus('fallback');}
+          console.warn('Character could not load; keeping the classic character.',error);
+        }).finally(()=>pending.delete(requested)));
+        await pending.get(requested);
+      }
+      if(!wanted||wantedId!==requested||!cached.has(requested))return;
+      const resource=cached.get(requested);
+      if(visual!==resource.visual){
+        ({visual,mixer,actions,materials}=resource);active=null;activeName=null;lastState=null;jumpTime=0;
+      }
+      show(true);onStatus(requested);
     }
     function select(name) {
       if (activeName === name) return;

@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../character-studio/3d');
-const binary = fs.readFileSync(path.join(root, 'assets/pip.glb'));
+for(const id of ['pip','moss','sunny','luna']){
+const binary = fs.readFileSync(path.join(root, `assets/${id}.glb`));
 assert.equal(binary.toString('ascii', 0, 4), 'glTF');
 assert.equal(binary.readUInt32LE(4), 2);
 assert.equal(binary.readUInt32LE(8), binary.length);
@@ -56,10 +57,14 @@ for (const mesh of gltf.meshes) for (const primitive of mesh.primitives) {
   triangles += gltf.accessors[primitive.indices].count / 3;
 }
 assert(triangles > 1000 && triangles < 50000);
-const report = JSON.parse(fs.readFileSync(path.join(root, 'assets/pip-info.json')));
+const report = JSON.parse(fs.readFileSync(path.join(root, `assets/${id}-info.json`)));
 assert.equal(report.triangles, triangles);
 assert.equal(report.glbBytes, binary.length);
 assert.equal(report.meshes, gltf.meshes.length);
-assert(fs.statSync(path.join(root, 'source/pip.blend')).size > 100000);
-assert.equal(fs.readFileSync(path.join(root, 'assets/pip-render.png')).toString('hex', 0, 8), '89504e470d0a1a0a');
-console.log(`Pip 3D: self-contained GLB, ${triangles} triangles, four animated clips with valid transforms, Blender source and render.`);
+assert(fs.statSync(path.join(root, `source/${id}.blend`)).size > 100000);
+assert.equal(fs.readFileSync(path.join(root, `assets/${id}-render.png`)).toString('hex', 0, 8), '89504e470d0a1a0a');
+assert.equal(report.character,id[0].toUpperCase()+id.slice(1));
+if(id==='pip'){const body=gltf.meshes.find(m=>m.name.startsWith('Body_Mesh'));const bounds=gltf.accessors[body.primitives[0].attributes.POSITION];const depth=bounds.max[2]-bounds.min[2],width=bounds.max[0]-bounds.min[0];assert(depth/width>.9,'Pip body depth should be close to its width, not flattened');}
+console.log(`${id} 3D: self-contained GLB, ${triangles} triangles, four animated clips with valid transforms, Blender source and render.`);
+
+}

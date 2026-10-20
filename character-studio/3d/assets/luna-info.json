@@ -1,0 +1,19 @@
+{
+  "character": "Luna",
+  "id": "luna",
+  "bodyDepth": 2.12,
+  "bodyWidth": 3.64,
+  "blender": "5.2.1 LTS",
+  "triangles": 31488,
+  "meshes": 24,
+  "materials": 8,
+  "clips": [
+    "Idle",
+    "Walk",
+    "Jump",
+    "Wave"
+  ],
+  "glbBytes": 690940,
+  "source": "source/luna.blend",
+  "reference": "../assets/luna.png"
+}
