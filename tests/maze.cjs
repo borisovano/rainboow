@@ -49,7 +49,7 @@ useMazePower('lantern');stepMaze(1/60,0);ensure(mazeWorld.chests.every(c=>c.visi
 useMazePower('anchor');ensure(playerGroup.position.x===start.x&&mazeWorld.used.anchor,'Anchor');
 useMazePower('echo');ensure(mazeWorld.timers.echo===8,'Echo duration');
 mazeWorld.timers.freeze=0;const guard=mazeWorld.guards[0];triggerPredatorChallenge(guard);
-ensure(gameState==='BREATHING'&&breathingSecondsLeft===5,'Breathing missing');updateBreathingPause(5);
+ensure(gameState==='PREDATOR_CHALLENGE','Question must start immediately');requestBreathingBonus();ensure(gameState==='BREATHING'&&breathingSecondsLeft===5,'Optional breathing missing');updateBreathingPause(5);
 const button=()=>({classList:{add(){},remove(){}},disabled:false});
 checkAnswer(currentChallenge.answer+100,button());checkAnswer(currentChallenge.answer+100,button());
 ensure(gameState==='PREDATOR_CHALLENGE'&&mazeEncounterMistakes===2,'Two allowed mistakes');

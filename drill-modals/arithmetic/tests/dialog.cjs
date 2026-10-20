@@ -9,7 +9,7 @@ let answered=0,cleaned=0;
 const d=createDialog({document,background:[background],onAnswer:()=>answered++,slots:{footer:ctx=>{ctx.onCleanup(()=>cleaned++);return ctx.node('p','','Footer');}}});
 d.render({text:'2 + 3',options:[4,5]}).show();assert(background.inert);
 const first=d.element.querySelector('button');first.click();assert.equal(answered,1);
-d.setCover(true);first.click();assert.equal(answered,1);d.setCover(false);d.lockAnswers();first.click();assert.equal(answered,1);
+d.setCover(true);first.click();assert.equal(answered,1);assert(first.disabled);assert(!d.element.querySelector('.md-content').inert);assert(d.element.querySelector('.md-answer-body').inert);assert.equal(d.element.querySelector('.md-expression').textContent,'2 + 3');d.setCover(false);assert(!first.disabled);d.lockAnswers();first.click();assert.equal(answered,1);
 d.lockAnswers(false);d.render({text:'6 + 1',options:[7,8]});assert.equal(cleaned,2);
 const other=createDialog({document,background:[background]}).show();d.hide();assert(background.inert);other.hide();assert(!background.inert);
 d.show();document.emit('keydown',{key:'Escape',preventDefault(){}});assert(!d.isOpen);

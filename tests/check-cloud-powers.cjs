@@ -30,7 +30,7 @@ useRainbowPower('dash');if(rainbowTimers.dashActive!==2||rainbowTimers.dash!==6)
 updateRainbowPowers(2.1);if(rainbowTimers.dashActive!==0||rainbowTimers.dash<=0)throw Error('Dash duration failed');
 useRainbowPower('cloak');triggerPredatorChallenge(cloud);if(gameState!=='PLAYING')throw Error('Cloaked player caught');
 updateRainbowPowers(4.1);if(rainbowTimers.cloakActive!==0)throw Error('Cloak duration');
-triggerPredatorChallenge(cloud);if(gameState!=='BREATHING')throw Error('Missing breathing pause');updateBreathingPause(BREATHING_PAUSE_SECONDS);if(gameState!=='PREDATOR_CHALLENGE'||predatorTimeLeft!==45)throw Error('Extra time failed');
+triggerPredatorChallenge(cloud);if(gameState!=='PREDATOR_CHALLENGE')throw Error('Mandatory breathing pause');requestBreathingBonus();updateBreathingPause(BREATHING_PAUSE_SECONDS);if(gameState!=='PREDATOR_CHALLENGE'||predatorTimeLeft!==45)throw Error('Extra time failed');
 const buttons=document.querySelectorAll('.answer-btn');
 if(buttons.find(b=>Number(b.textContent)===currentChallenge.answer).disabled||buttons.filter(b=>b.hidden).length!==1)throw Error('Hint removes wrong choice');
 gameState='PLAYING';placeCloudWithinRainbow(cloud,location.x+10,location.z);const beforeSun=score;

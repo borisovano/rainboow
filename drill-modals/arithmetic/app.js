@@ -1,10 +1,19 @@
 (function(){
-  let dialog=null,timer=null,completionTimer=null;
-  Drill.onDispose(()=>{clearInterval(timer);clearTimeout(completionTimer);dialog?.destroy();});
+  let dialog=null,timer=null,completionTimer=null,breathTimer=null,disposed=false;
+  Drill.onDispose(()=>{disposed=true;clearInterval(timer);clearTimeout(completionTimer);clearTimeout(breathTimer);dialog?.destroy();});
   Drill.onStart(params=>{
     const registry=MathDialogPresets.register(MathDialogs.createRegistry());NumberEntryDialog.register(registry);
     const question=Arithmetic.question(params);let attempts=0,finished=false,seconds=params.seconds??0;
     dialog=registry.create(params.answerMode==='typed'?'number-entry':'practice',{
+      cover:{image:'../../assets/breathing-child.png',text:'חמש שניות לנשימה רגועה. מיד חוזרים לתרגיל.'},
+      breathing:{label:seconds?'נשימה קצרה · זמן מחדש':'נשימה קצרה · 5 שניות',onRequest(){
+        if(finished||disposed||breathTimer!==null)return;
+        clearInterval(timer);dialog.setCover(true);
+        breathTimer=setTimeout(()=>{
+          breathTimer=null;if(disposed||finished)return;
+          seconds=params.seconds??0;dialog.setCover(false).setTimer(seconds||null).focusAnswer();startTimer();
+        },5000);
+      }},
       onAnswer(value,control){
         if(finished)return;attempts++;
         if(value!==question.answer){dialog.markAnswer(control,'wrong');dialog.setHint('עוד ניסיון — אתם יכולים!');return;}
@@ -14,6 +23,7 @@
     });
     function showFinish(outcome){completionTimer=setTimeout(()=>Drill.complete({outcome,method:'answer',itemId:question.itemId,attempts,details:{operation:params.operation??'add',answerMode:params.answerMode??'choice'}}),800);}
     dialog.render(question,{title:'אתגר חשבון',timer:seconds||null}).show();
-    if(seconds)timer=setInterval(()=>{dialog.setTimer(--seconds);if(!seconds){finished=true;clearInterval(timer);dialog.lockAnswers();dialog.setHint('הזמן נגמר. ננסה שוב בפעם הבאה.');showFinish('failure');}},1000);
+    function startTimer(){clearInterval(timer);if(seconds)timer=setInterval(()=>{dialog.setTimer(--seconds);if(!seconds){finished=true;clearInterval(timer);dialog.lockAnswers();dialog.setHint('הזמן נגמר. ננסה שוב בפעם הבאה.');showFinish('failure');}},1000);}
+    startTimer();
   });
 })();

@@ -158,13 +158,13 @@
         host: document.getElementById('game-container'),
         background: [document.getElementById('ui-layer')],
         dismissible: false,
-        cover: {image:'assets/breathing-child.png',alt:'ילד נושם בנחת, יד אחת על הבטן ויד אחת על החזה'},
+        cover: {image:'assets/breathing-child.png',alt:'ילד נושם בנחת, יד אחת על הבטן ויד אחת על החזה',text:'חמש שניות לנשימה רגועה. מיד חוזרים לתרגיל.'},
         // Stable selectors for integrations; standalone instances use unique IDs by default.
         ids: {overlay:'challenge-modal',content:'challenge-content',title:'challenge-story',timer:'predator-timer',hint:'challenge-hint',problem:'math-problem',answers:'answers-container',cover:'breathing-card'},
         onAnswer: (value, control) => checkAnswer(value, control)
     });
     function renderGameChallenge(question, {type='practice',title,hint='',timer=null,overrides={}}) {
-        challengeDialog.configure(dialogRegistry.resolve(type,overrides));
+        challengeDialog.configure(dialogRegistry.resolve(type,{...overrides,breathing:{onRequest:requestBreathingBonus,label:timer===null?'נשימה קצרה · 5 שניות':'נשימה קצרה · זמן מחדש'}}));
         challengeDialog.render(question,{title,hint,timer});
     }
 
@@ -204,6 +204,7 @@
     const BREATHING_PAUSE_SECONDS = 5;
     let breathingSecondsLeft = 0;
     let breathingPredator = null;
+    let breathingResumeState = null;
     
     let isSpaceRealmOpen = false;
     let spaceWall = null; // The physical barrier
@@ -295,6 +296,7 @@
     const predators = [];
     let predatorInterval = null;
     let predatorTimeLeft = 30;
+    let predatorTimeLimit = 30;
     const WORLD_RADIUS = 390;
     const MOON_ENTRY = -870;
     const MOON_FAR = -1430;
@@ -1130,8 +1132,15 @@
         
         mazeQuestionsSolved=0;mazeEncounterMistakes=0;
         preparePredatorMathChallenge(predatorObj);
+        Object.keys(keys).forEach(key => keys[key] = false);
+        beginPredatorMathChallenge();
+    }
+
+    function requestBreathingBonus() {
+        if(!['CHALLENGE','PREDATOR_CHALLENGE'].includes(gameState)||!challengeDialog.isOpen||challengeDialog.isLocked||!currentChallenge)return;
+        breathingResumeState=gameState;
+        breathingPredator=gameState==='PREDATOR_CHALLENGE'?activeObstacle:null;
         gameState = 'BREATHING';
-        breathingPredator = predatorObj;
         breathingSecondsLeft = BREATHING_PAUSE_SECONDS;
         Object.keys(keys).forEach(key => keys[key] = false);
         clearInterval(predatorInterval);
@@ -1146,7 +1155,11 @@
         breathingPredator = null;
         challengeDialog.setCover(false);
         Object.keys(keys).forEach(key => keys[key] = false);
-        beginPredatorMathChallenge();
+        const resume=breathingResumeState;breathingResumeState=null;
+        if(resume==='PREDATOR_CHALLENGE') {
+            predatorTimeLeft=predatorTimeLimit;challengeDialog.setTimer(predatorTimeLeft);
+            beginPredatorMathChallenge();
+        } else {gameState='CHALLENGE';challengeDialog.focusAnswer();}
     }
 
     function preparePredatorMathChallenge(predatorObj) {
@@ -1210,7 +1223,8 @@
         };
         
         const title = predatorObj.isMaze ? 'שומר אבן מתקרב! פתרו כדי לפתוח את הדרך.' : predatorObj.isCloud ? 'ענן סערה תפס אותך! פתרו כדי לפזר אותו!' : predatorObj.isAsteroid ? 'אסטרואיד מתקרב! פתרו כדי לנפץ אותו!' : 'אוי לא! טורף תפס אותך!';
-        predatorTimeLeft = currentRealm==='rainbow'&&rainbowPowers.clock ? 45 : 30;
+        predatorTimeLimit = currentRealm==='rainbow'&&rainbowPowers.clock ? 45 : 30;
+        predatorTimeLeft = predatorTimeLimit;
         renderGameChallenge(currentChallenge,{type:predatorObj.dialogType||'timed',title,timer:predatorTimeLeft,overrides:predatorObj.dialogOptions});
         applyRainbowHint();
         mazeGuardHint();
@@ -1218,8 +1232,10 @@
     }
 
     function beginPredatorMathChallenge() {
+        clearInterval(predatorInterval);
         gameState = 'PREDATOR_CHALLENGE';
         predatorInterval = setInterval(() => {
+            if(gameState!=='PREDATOR_CHALLENGE'||document.hidden)return;
             predatorTimeLeft--;
             challengeDialog.setTimer(predatorTimeLeft);
             if (predatorTimeLeft <= 0) {
@@ -1525,6 +1541,7 @@
             const wasOnIsland = !isJumping && (supportingMoonPlatform(playerGroup.position.x,playerGroup.position.z,playerGroup.position.y) || (rainbowSurfaceAt(playerGroup.position.x,playerGroup.position.z)!==null && playerGroup.position.y>=rainbowSurfaceAt(playerGroup.position.x,playerGroup.position.z)-.8));
             let moveX = 0, moveZ = 0;
             let currentSpeed = (isPlayerOnPath(playerGroup.position.x, playerGroup.position.z) ? WALK_SPEED / 60 : 0.2) * movementSpeedMultiplier * (currentRealm==='rainbow'&&rainbowTimers.dashActive>0?2:1);
+            if(isJumping&&powerups.superJump)currentSpeed*=2;
 
             if (keys.up) moveZ = -currentSpeed;
             if (keys.down) moveZ = currentSpeed;

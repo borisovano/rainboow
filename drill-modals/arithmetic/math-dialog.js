@@ -49,6 +49,11 @@
       return grid;
     },
     footer(){return null;},
+    bonus(ctx){
+      if(!ctx.breathing?.onRequest)return null;
+      const button=ctx.node('button','md-breath-button',ctx.breathing.label||'נשימה קצרה · זמן מחדש', 'breathButton');
+      button.type='button';button.onclick=()=>ctx.requestBreathing();return button;
+    },
     cover(ctx){
       const box=ctx.node('div','md-breathing');
       if(ctx.cover.image){const img=ctx.node('img','md-breathing-image');img.src=ctx.cover.image;img.alt=ctx.cover.alt||ctx.labels.breathingTitle;box.appendChild(img);}
@@ -60,16 +65,17 @@
   function createDialog(options={}){
     const doc=options.document||document,host=options.host||doc.body,prefix=options.idPrefix||`math-dialog-${++nextId}`;
     let config=merge(defaults,options), state={question:{text:'',options:[]},title:config.labels.title,hint:'',timer:null}, opened=false,disposed=false,covered=false,locked=false,previousFocus=null;
-    let answers=[],cleanups=[],themeKeys=[],background=[];
+    let answers=[],cleanups=[],themeKeys=[],background=[],coveredControls=new Map(),answerBody=null;
     const ids=options.ids||{};
     const node=(tag,cls,text,key)=>{const n=element(doc,tag,cls,text);if(key)n.id=ids[key]||`${prefix}-${key}`;return n;};
     const overlay=node('div','md-overlay',undefined,'overlay'),card=node('div','md-card'),content=node('div','md-content',undefined,'content'),cover=node('div','md-cover',undefined,'cover');
     overlay.hidden=true;overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label',config.labels.title);overlay.tabIndex=-1;
-    card.appendChild(content);card.appendChild(cover);overlay.appendChild(card);host.appendChild(overlay);cover.tabIndex=-1;cover.hidden=true;
+    card.appendChild(content);overlay.appendChild(card);host.appendChild(overlay);cover.tabIndex=-1;cover.hidden=true;cover.setAttribute('role','status');
     function assertAlive(){if(disposed)throw Error('This dialog has been destroyed.');}
     function cleanup(){for(const fn of cleanups.splice(0))fn();}
-    function context(){return {...state,cover:config.cover||{},labels:config.labels,document:doc,node,parts,dialog:api,
+    function context(){return {...state,cover:config.cover||{},breathing:config.breathing,labels:config.labels,document:doc,node,parts,dialog:api,
       submit(value,control){if(opened&&!covered&&!locked&&!control?.disabled)config.onAnswer?.(value,control,api);},
+      requestBreathing(){if(opened&&!covered&&!locked)config.breathing?.onRequest(api);},
       registerAnswer(control,value){answers.push({control,value});},
       onCleanup(fn){cleanups.push(fn);}};}
     function render(){
@@ -80,10 +86,13 @@
       for(const key of themeKeys)overlay.style.setProperty(key,config.theme[key]);
       card.className='md-card'+(config.className?' '+config.className:'');
       const ctx=context(),resolved={};
-      for(const name of ['header','timer','hint','problem','answers','footer']){
+      for(const name of ['header','timer','hint','problem','answers','bonus','footer']){
         const renderer=config.slots[name]===undefined?parts[name]:config.slots[name];
         resolved[name]=renderer?renderer(ctx):null;
       }
+      answerBody=node('div','md-answer-body');
+      if(resolved.answers)answerBody.appendChild(resolved.answers);
+      const responseArea=node('div','md-response-area');responseArea.appendChild(answerBody);responseArea.appendChild(cover);resolved.answers=responseArea;
       if(config.layout){const layout=config.layout(ctx,resolved);if(layout)content.appendChild(layout);}
       else for(const n of Object.values(resolved))if(n)content.appendChild(n);
       api.setTimer(state.timer);api.setHint(state.hint);
@@ -114,15 +123,20 @@
       setHint(text){state.hint=text;const n=content.querySelector('#'+(ids.hint||`${prefix}-hint`));if(n)n.textContent=text;return api;},
       getHint(){return state.hint;},
       setCover(value){
-        covered=!!value;content.inert=covered;content.classList.toggle('breathing',covered);cover.hidden=!covered;cover.classList.toggle('active',covered);
+        const next=!!value;
+        if(next&&!covered)coveredControls=new Map(answers.map(({control})=>[control,control.disabled]));
+        covered=next;if(answerBody)answerBody.inert=covered;cover.hidden=!covered;cover.classList.toggle('active',covered);card.classList.toggle('is-breathing',covered);
+        for(const {control} of answers)control.disabled=covered||locked||!!coveredControls.get(control)||control.hidden;
+        if(!covered)coveredControls.clear();
+        const bonus=content.querySelector('#'+(ids.breathButton||`${prefix}-breathButton`));if(bonus)bonus.disabled=covered||locked;
         cover.replaceChildren();if(covered){const renderer=config.slots.cover===undefined?parts.cover:config.slots.cover;const child=renderer?.(context());if(child)cover.appendChild(child);cover.focus();}return api;
       },
       focusAnswer(){if(opened)(covered?cover:focusable()[0]||overlay).focus();return api;},
-      lockAnswers(value=true){locked=value;for(const {control} of answers)control.disabled=value;return api;},
+      lockAnswers(value=true){locked=value;for(const {control} of answers){if(covered)coveredControls.set(control,value||control.hidden);control.disabled=covered||value||control.hidden;}const bonus=content.querySelector('#'+(ids.breathButton||`${prefix}-breathButton`));if(bonus)bonus.disabled=covered||locked;return api;},
       markAnswer(control,result){control?.classList.remove('correct','wrong');if(result)control?.classList.add(result);return api;},
       hideAnswer(predicate){const answer=answers.find(a=>predicate(a.value)&&!a.control.hidden);if(!answer)return false;answer.control.disabled=true;answer.control.hidden=true;return true;},
       destroy(){if(disposed)return;api.hide('destroy');cleanup();overlay.remove();disposed=true;},
-      get isOpen(){return opened;},get isCovered(){return covered;}
+      get isOpen(){return opened;},get isCovered(){return covered;},get isLocked(){return locked;}
     };
     overlay.addEventListener('click',event=>{if(event.target===overlay&&config.dismissible)api.hide('backdrop');});
     render();return api;
