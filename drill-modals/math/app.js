@@ -3,17 +3,17 @@
   Drill.onDispose(()=>{disposed=true;clearInterval(timer);clearTimeout(completionTimer);clearTimeout(breathTimer);dialog?.destroy();});
   Drill.onStart(params=>{
     const registry=MathDialogPresets.register(MathDialogs.createRegistry());NumberEntryDialog.register(registry);
-    const question=Arithmetic.question(params);let attempts=0,finished=false,seconds=params.seconds??0;
+    const question=Arithmetic.question(params),breath=params.features.breathing;let attempts=0,finished=false,seconds=params.seconds??0;
     dialog=registry.create(params.answerMode==='typed'?'number-entry':'practice',{
-      cover:{image:'../../assets/breathing-child.png',text:'חמש שניות לנשימה רגועה. מיד חוזרים לתרגיל.'},
-      breathing:{label:seconds?'נשימה קצרה · זמן מחדש':'נשימה קצרה · 5 שניות',onRequest(){
+      cover:{image:'../../assets/breathing-child.png',text:'נשימה רגועה. מיד חוזרים לתרגיל.'},
+      breathing:breath.enabled?{label:`נשימה קצרה · ${breath.durationSeconds} שניות`,onRequest(){
         if(finished||disposed||breathTimer!==null)return;
-        clearInterval(timer);dialog.setCover(true);
+        clearInterval(timer);dialog.setBreathingDuration(breath.durationSeconds).setCover(true);
         breathTimer=setTimeout(()=>{
           breathTimer=null;if(disposed||finished)return;
           seconds=params.seconds??0;dialog.setCover(false).setTimer(seconds||null).focusAnswer();startTimer();
-        },5000);
-      }},
+        },breath.durationSeconds*1000);
+      }}:null,
       onAnswer(value,control){
         if(finished)return;attempts++;
         if(value!==question.answer){dialog.markAnswer(control,'wrong');dialog.setHint('עוד ניסיון — אתם יכולים!');return;}

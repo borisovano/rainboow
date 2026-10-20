@@ -1,7 +1,7 @@
 (function(){
   const registry=MathDialogPresets.register(MathDialogs.createRegistry());
   NumberEntryDialog.register(registry);
-  registry.register('breathing',{extends:'timed',name:'Optional breathing bonus',groups:['timed','wellbeing'],cover:{image:'../../assets/breathing-child.png',text:'חמש שניות לנשימה רגועה. הזמן יתחיל מחדש.'}});
+  registry.register('breathing',{extends:'timed',name:'Optional breathing bonus',groups:['timed','wellbeing'],cover:{image:'../../assets/breathing-child.png',text:'נשימה רגועה. הזמן יתחיל מחדש.'}});
   registry.register('composed',{extends:'practice',name:'A different composition',groups:['examples'],layout(ctx,sections){
     const box=ctx.node('section');
     for(const name of ['header','problem','answers','hint','timer','footer'])if(sections[name])box.appendChild(sections[name]);
@@ -15,10 +15,10 @@
   }
   function launch(id){
     clearTimers();active?.destroy();
-    const preset=registry.resolve(id),timed=preset.groups.includes('timed');
+    const preset=registry.resolve(id),timed=preset.groups.includes('timed'),breath=GameFeatures.drillParams('math').features.breathing;
     const footer=preset.slots.footer;
     const dialog=registry.create(id,{background:[page],dismissible:true,
-      breathing:id==='breathing'?{onRequest(){clearTimers();dialog.setCover(true);pause=setTimeout(()=>{pause=null;dialog.setCover(false).setTimer(30).focusAnswer();startTimer();},5000);}}:undefined,
+      breathing:id==='breathing'&&breath.enabled?{label:`נשימה קצרה · ${breath.durationSeconds} שניות`,onRequest(){clearTimers();dialog.setBreathingDuration(breath.durationSeconds).setCover(true);pause=setTimeout(()=>{pause=null;dialog.setCover(false).setTimer(30).focusAnswer();startTimer();},breath.durationSeconds*1000);}}:undefined,
       slots:{footer(ctx){const box=ctx.node('div');const contribution=footer?.(ctx);if(contribution)box.appendChild(contribution);const close=ctx.node('button','demo-close','Close preview');close.type='button';close.onclick=()=>ctx.dialog.hide();box.appendChild(close);return box;}},
       onAnswer(value,control){clearTimers();dialog.lockAnswers();dialog.markAnswer(control,value===12?'correct':'wrong');dialog.setHint(value===12?'נכון! כל הכבוד.':'כמעט! התשובה היא 12.');status.textContent=`${preset.name}: ${value===12?'correct answer':'try again by reopening the preview'}.`;},
       onClose(){clearTimers();}

@@ -8,7 +8,7 @@ class Obj {constructor(geometry,material){this.material=material;this.id=++objec
 const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};this.domElement=document.createElement("canvas");}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
 const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
 const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(){},setInterval(){},clearInterval(){},console};
-vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/arithmetic',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+ctx.GameFeatures=require('../dist/features/flags.js').createStore();vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/math',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 vm.runInContext(`
 openMoonShortcut();resetRealmPowers('rainbow');gameState='PLAYING';
 const friends=npcList.filter(n=>n.realm==='rainbow'),clouds=predators.filter(p=>p.isCloud);
@@ -30,7 +30,7 @@ useRainbowPower('dash');if(rainbowTimers.dashActive!==2||rainbowTimers.dash!==6)
 updateRainbowPowers(2.1);if(rainbowTimers.dashActive!==0||rainbowTimers.dash<=0)throw Error('Dash duration failed');
 useRainbowPower('cloak');triggerPredatorChallenge(cloud);if(gameState!=='PLAYING')throw Error('Cloaked player caught');
 updateRainbowPowers(4.1);if(rainbowTimers.cloakActive!==0)throw Error('Cloak duration');
-triggerPredatorChallenge(cloud);if(gameState!=='PREDATOR_CHALLENGE')throw Error('Mandatory breathing pause');requestBreathingBonus();updateBreathingPause(BREATHING_PAUSE_SECONDS);if(gameState!=='PREDATOR_CHALLENGE'||predatorTimeLeft!==45)throw Error('Extra time failed');
+triggerPredatorChallenge(cloud);if(gameState!=='PREDATOR_CHALLENGE')throw Error('Mandatory breathing pause');requestBreathingBonus();updateBreathingPause(10);if(gameState!=='PREDATOR_CHALLENGE'||predatorTimeLeft!==45)throw Error('Extra time failed');
 const buttons=document.querySelectorAll('.answer-btn');
 if(buttons.find(b=>Number(b.textContent)===currentChallenge.answer).disabled||buttons.filter(b=>b.hidden).length!==1)throw Error('Hint removes wrong choice');
 gameState='PLAYING';placeCloudWithinRainbow(cloud,location.x+10,location.z);const beforeSun=score;

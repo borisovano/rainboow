@@ -28,8 +28,9 @@
       else onFailure(result);
     }
     try{
-      const entry=(await list()).find(e=>e.metadata.id===id);if(!entry)throw Error('Unknown drill: '+id);
-      const m=entry.metadata,validated=DrillContract.parameters(m,params);
+      const entry=(await list()).find(e=>e.metadata.id===id||e.metadata.aliases.includes(id));if(!entry)throw Error('Unknown drill: '+id);
+      const m=entry.metadata;id=m.id;
+      const validated=DrillContract.parameters(m,root.GameFeatures?root.GameFeatures.drillParams(m.id,params):params);
       const dialog=document.createElement('dialog'),header=document.createElement('header'),title=document.createElement('h2'),testHint=document.createElement('small'),frame=document.createElement('iframe'),notice=document.createElement('p');
       const session=crypto.randomUUID(),origin=location.origin,previousFocus=document.activeElement;
       let ready=false;

@@ -20,7 +20,7 @@ The 3D game includes its matching Three.js renderer locally and loads Tone.js, T
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md). A contribution is a folder in `drill-modals/` containing **your HTML/CSS/JS, `drill.json` metadata, and unit tests**. Shared `helpers/` and `styles/` support each drill. [The runner guide](drill-modals/README.md) explains parameterized manual testing and the game output contract. There is no mandatory component structure. The host handles opening/closing; the drill reports completion through a tiny message bridge.
 
-The first real example, `drill-modals/hebrew-reading/`, adapts the sibling `hebrew-reading-lab` project. All friends in Earth, Moon, Rainbow and Maze use it, along with Moon bridge gates, Rainbow gates, the final gold-pot unlock to the Maze, and the Maze exit. One correct word automatically returns to the game; points, powers and unlock conditions remain owned by the game. Enemy encounters and ordinary obstacles/treasure keep their math questions.
+The first real example, `drill-modals/word-reading/`, adapts the sibling `hebrew-reading-lab` project. All friends in Earth, Moon, Rainbow and Maze use it, along with Moon bridge gates, Rainbow gates, the final gold-pot unlock to the Maze, and the Maze exit. One correct word automatically returns to the game; points, powers and unlock conditions remain owned by the game. Enemy encounters and ordinary obstacles/treasure keep their math questions.
 
 ## Source map
 
@@ -29,7 +29,7 @@ The first real example, `drill-modals/hebrew-reading/`, adapts the sibling `hebr
 | `dist/index.html` | Main game, worlds, controls, scoring and rescue integration |
 | `dist/maze.js` | Maze generation, powers and gameplay |
 | `dist/features/` | Feature registry, browser settings, and the optional Pip game avatar |
-| `dist/feature-flags/` | Feature flag controller and shareable world test links |
+| `dist/control-center/` | Unified game features, drill parameters, manual testing and results |
 | `drill-modals/` | Separate drill folders, shared helpers/styles, runner and unit tests |
 | `build/` | Generated publishable website (ignored by Git) |
 | `dist/assets/` | Game assets |
@@ -38,7 +38,7 @@ The first real example, `drill-modals/hebrew-reading/`, adapts the sibling `hebr
 
 `dist/` contains the game source; `drill-modals/` contains independent drill source. `npm start` serves both directly. `npm run build` packages them into `build/` and excludes drill tests and documentation.
 
-Run a drill’s tests on their own with `npm run test:drill -- hebrew-reading` or `npm run test:drill -- arithmetic`. Open `/drills/?drill=hebrew-reading` to edit inputs and inspect the resulting game payload.
+Run a drill’s tests on their own with `npm run test:drill -- word-reading` or `npm run test:drill -- math`. Open `/drills/?drill=word-reading` to edit inputs and inspect the resulting game payload.
 
 ## Push to GitHub
 
@@ -55,7 +55,7 @@ Testing shortcuts (type during play; physical English letter keys also work with
 
 Super-jump doubles horizontal movement while airborne on Earth and Moon, creating a longer leap without changing its height. Ground movement and ordinary jumps keep their existing speed; the leap multiplier also stacks with the testing speed shortcut.
 
-Math encounters open immediately with an optional breathing bonus button. Pressing it shows the breathing child over the answers for five seconds while leaving the equation visible. Answers and the countdown pause, then the encounter's full time allowance restarts (including the Rainbow clock bonus). The question and previous mistakes remain unchanged. Untimed questions stay untimed.
+Math encounters open immediately with an optional breathing bonus button. Pressing it shows the breathing child over the answers for ten seconds by default while leaving the equation visible. Answers and the countdown pause, then the encounter's full time allowance restarts (including the Rainbow clock bonus). The question and previous mistakes remain unchanged. Untimed questions stay untimed.
 
 Direct stage URLs: `/earth/`, `/moon/`, `/rainbow/`, `/maze/`. Each redirects to `/?stage=<name>`; select a class to start directly in that world with zero points and no powers. Unknown stage values start on Earth. These entries bypass earlier worlds, while the chosen world's own challenges stay active.
 
@@ -67,12 +67,14 @@ Open `/character-studio/` for an independent image playground: four original cha
 
 Open `/character-studio/3d/` to explore **Pip in 3D**: a real Blender model with idle, walk, jump, and wave animations. Orbit the model, inspect its mesh, and download the animated GLB, editable Blender project, or reproducible build script. See the [3D asset workflow](character-studio/3d/README.md).
 
-### Feature flags
+### Control Center and feature flags
 
-Open `/feature-flags/` to enable **Play as Pip** (`pipCharacter`, default **off**). Settings are browser-local, stored under `moon-rainbow.features.v1`, and update ordinary open game tabs through storage events. The controller is a public testing page, not a global administrator console. Reset restores defaults without deleting other game or studio data.
+Open `/control-center/` to configure game features and drill defaults. `/feature-flags/` and `/drills/` redirect here, preserving their query parameters. Enable **Play as Pip** (`pipCharacter`, default **off**). Settings are browser-local, stored under `moon-rainbow.features.v1`, and update ordinary open game tabs through storage events. The controller is a public testing page, not a global administrator console. Reset restores defaults without deleting other game or studio data.
 
-The controller generates a test link for any of the four worlds. `/?stage=moon&ff.pipCharacter=1` pins Pip on; `ff.pipCharacter=0` pins it off. Explicit URL flags take priority over browser settings for that tab and are not saved. Direct world routes also preserve them, e.g. `/maze/?ff.pipCharacter=1`. If browser storage is blocked, use the generated link to carry the current settings into the game.
+The controller generates a test link for any of the four worlds, including feature flags and validated drill settings (`dp.<drillId>` JSON). `/?stage=moon&ff.pipCharacter=1` pins Pip on; `ff.pipCharacter=0` pins it off. Explicit URL flags take priority over browser settings for that tab and are not saved. Direct world routes also preserve them, e.g. `/maze/?ff.pipCharacter=1`. If browser storage is blocked, use the generated link to carry the current settings into the game.
 
 Pip is a visual swap: the same player position, collision radius, growth, jumping, stage transitions, powers, and death logic apply. The model is loaded only when enabled, with the classic character retained during loading and on failure. Idle/walk/jump follow actual movement; the model's baked vertical hop is removed so physics stays authoritative. New-power screens play Wave. The rainbow cloak affects all Pip materials.
 
-To add a flag, register its stable `id`, title, category, description, and boolean default in `dist/features/flags.js`. The controller and link builder render that registry automatically. Use `GameFeatures.enabled(id)` at the integration point, and `GameFeatures.subscribe(callback)` for live changes. See `tests/feature-flags.cjs` and `tests/pip-avatar.cjs` for storage/URL behavior and actual r128 GLB animation checks.
+Game-wide flags live in `dist/features/flags.js`. Drill-owned features belong in that drill’s `drill.json`; the control center nests each toggle and its parameters under its owner. Math owns `math.breathing` (on by default), with `durationSeconds: 10` and a validated range of 1–60 seconds. Changes update open game tabs; an active standalone drill keeps the configuration it started with. A breathing pause already in progress finishes at its original duration.
+
+For a game-wide flag, register its stable `id`, title, category, description, and boolean default in `dist/features/flags.js`. The controller and link builder render that registry automatically. Use `GameFeatures.enabled(id)` at the integration point, and `GameFeatures.subscribe(callback)` for live changes. See `tests/feature-flags.cjs` and `tests/pip-avatar.cjs` for storage/URL behavior and actual r128 GLB animation checks.

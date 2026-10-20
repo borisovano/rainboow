@@ -4,11 +4,11 @@ Every drill owns its HTML, CSS, JavaScript, metadata, and tests. Shared code onl
 
 ```text
 drill-modals/
-  hebrew-reading/
+  word-reading/
     index.html, style.css, app.js, logic.js, words.js
     drill.json
     tests/logic.cjs, tests/ui.cjs
-  arithmetic/
+  math/
     index.html, style.css, app.js, logic.js
     drill.json
     tests/logic.cjs, tests/dialog.cjs
@@ -19,18 +19,19 @@ drill-modals/
     contract.js     # input validation and output normalization
     metadata.js    # discovery and tagging
     testing/       # lightweight Node DOM fixture
-  styles/          # shared shell, arithmetic, and runner styles
-  runner/          # manual test harness
-  index.html       # runner entry
+  styles/          # shared modal shell, math UI, and metadata browser styles
+  runner/          # reusable test-link parsing
+  index.html       # redirects to the unified /control-center/
   catalog.json     # registered drill manifests
+  registry.js      # generated browser metadata; edit drill.json instead
 ```
 
 From the repository root:
 
 ```sh
 npm start
-npm run test:drill -- hebrew-reading
-npm run test:drill -- arithmetic
+npm run test:drill -- word-reading
+npm run test:drill -- math
 npm test
 npm run build
 ```
@@ -39,22 +40,22 @@ The development server maps `/drills/` directly to this folder, so edits appear 
 
 ## Explore a drill manually
 
-Open `http://127.0.0.1:8765/drills/?drill=hebrew-reading`. Select an example or edit its JSON parameters, then choose **Run drill**. Complete or cancel it to inspect the normalized output. You can rerun without restarting the game or server.
+Open `http://127.0.0.1:8765/control-center/?drill=word-reading`. Select an example or edit its parameter controls, then choose **Run drill**. Complete or cancel it to inspect the normalized output. You can rerun without restarting the game or server.
 
 To open a specific configuration immediately, use `drill`, URL-encoded JSON `params`, and `run=1`:
 
 ```text
-/drills/?drill=arithmetic&params=%7B%22a%22%3A6%2C%22b%22%3A8%2C%22operation%22%3A%22multiply%22%2C%22answerMode%22%3A%22typed%22%7D&run=1
+/drills/?drill=math&params=%7B%22a%22%3A6%2C%22b%22%3A8%2C%22operation%22%3A%22multiply%22%2C%22answerMode%22%3A%22typed%22%7D&run=1
 ```
 
-The runner generates an **Open this exact configuration** link. Invalid JSON, unknown parameters, types and bounds are checked before opening. The parameter reference and example configurations come from each drill's manifest, not hardcoded runner forms. Inputs that are valid structurally but invalid for a drill's content (such as a Hebrew word outside its bank) return an error result during initialization.
+Use **Copy drill link** to share a reproducible test. The old `/drills/` endpoint and `arithmetic` / `hebrew-reading` IDs continue to resolve. Invalid JSON, unknown parameters, types and bounds are checked before opening. The fields, examples, nested feature switches, and metadata viewer come from the manifest. Inputs that are valid structurally but invalid for a drill's content (such as a Hebrew word outside its bank) return an error result during initialization.
 
 ## Interface used by both games and the runner
 
 Load `helpers/metadata.js`, `helpers/contract.js`, `helpers/host.js` and `styles/host.css` in the host page. Then:
 
 ```js
-const session = await DrillHost.open('hebrew-reading', {
+const session = await DrillHost.open('word-reading', {
   params: { word: 'דג', wordLength: '2', sound: false },
   context: { gameLevel: 1 }, // Optional game context; not drill configuration.
   onResult(result) {
@@ -91,7 +92,7 @@ The game receives:
 ```json
 {
   "schemaVersion": 1,
-  "drillId": "hebrew-reading",
+  "drillId": "word-reading",
   "outcome": "success",
   "method": "speech-transcript",
   "itemId": "דג",
@@ -105,6 +106,28 @@ The host assigns the drill ID, schema version, and elapsed time (including frame
 
 ## Parameter declarations
 
-`drill.json` contains a `parameters` map. Each field declares `type`, an optional `default`, `required`, `description`, and optional `enum`, `minimum`, `maximum`, or `maxLength`. Primitive types, arrays and objects are supported; arrays and objects are passed as JSON and their inner shape is the drill's responsibility. Unknown top-level fields are rejected. Total parameters are limited to 8 KB. Use `examples: [{name, params}]` for reproducible cases in the runner.
+`drill.json` uses metadata schema version 2. `defaultParams` contains every parameter’s default value. `parameters` declares `type` (`string`, `integer`, `number`, `boolean`, `array`, `object`), `title`, `description`, and optional `enum`, `minimum`, `maximum`, or `maxLength`. Unknown fields and invalid types/ranges are rejected. Arrays and objects use a JSON field; their inner structure remains the drill’s responsibility. Total resolved parameters are limited to 8 KB. Use `examples: [{name, params}]` for reproducible cases.
+
+Names, paths, labels and all manifest text are English. Hebrew lesson text stays in `word-reading/words.js` and its display files. `letters` uses English names such as `alef` and `final-mem`; `language: "he-IL"` still describes the lesson language. `labels` are searchable, flexible slugs such as `math`, `multichoice`, `chrome`. They do not impose a component layout.
+
+Features belong to their owning drill:
+
+```json
+{
+  "features": {
+    "breathing": {
+      "title": "Breathing bonus",
+      "description": "Pause responses, then reset the countdown.",
+      "defaultEnabled": true,
+      "defaultParams": { "durationSeconds": 10 },
+      "parameters": { "durationSeconds": { "type": "integer", "minimum": 1, "maximum": 60 } }
+    }
+  }
+}
+```
+
+The host resolves this to `params.features.breathing = {enabled: true, durationSeconds: 10}`. Explicit test/game parameters override saved defaults. Shared game links pin feature flags and `dp.<drillId>` JSON; explicit `ff.<drillId>.<featureId>` switches win over pinned parameter values. Active tests keep their inputs until completion. The game applies breathing changes live but lets an already-started pause finish normally.
+
+`npm start`, `npm test`, and `npm run build` regenerate `registry.js`. Restart the development server after editing a manifest. Both game settings and control-center forms consume the same generated data. The original JSON remains authoritative.
 
 Extract content selection and answer evaluation into pure functions in the drill's `logic.js`. Unit tests can call those functions directly, without Three.js, a browser, microphone permission, or the rest of the game. UI tests can separately verify retries, result emission and cleanup. Real audio recognition still needs a manual browser check.

@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
-  "id": "arithmetic",
-  "title": "אתגר חשבון",
+  "schemaVersion": 2,
+  "id": "math",
+  "title": "Math Challenge",
   "entry": "index.html",
   "subject": "mathematics",
   "language": "he-IL",
@@ -46,43 +46,43 @@
   "parameters": {
     "a": {
       "type": "integer",
-      "default": 7,
       "minimum": 0,
       "maximum": 100,
-      "description": "First operand."
+      "description": "First operand.",
+      "title": "First number"
     },
     "b": {
       "type": "integer",
-      "default": 5,
       "minimum": 0,
       "maximum": 100,
-      "description": "Second operand."
+      "description": "Second operand.",
+      "title": "Second number"
     },
     "operation": {
       "type": "string",
-      "default": "add",
       "enum": [
         "add",
         "subtract",
         "multiply"
       ],
-      "description": "Operation to practice."
+      "description": "Operation to practice.",
+      "title": "Operation"
     },
     "answerMode": {
       "type": "string",
-      "default": "choice",
       "enum": [
         "choice",
         "typed"
       ],
-      "description": "Multiple choice or number entry."
+      "description": "Multiple choice or number entry.",
+      "title": "Answer mode"
     },
     "seconds": {
       "type": "integer",
-      "default": 0,
       "minimum": 0,
       "maximum": 300,
-      "description": "Time limit; 0 means untimed."
+      "description": "Time limit; 0 means untimed.",
+      "title": "Time limit (seconds)"
     }
   },
   "examples": [
@@ -110,5 +110,48 @@
         "seconds": 5
       }
     }
-  ]
+  ],
+  "aliases": [
+    "arithmetic"
+  ],
+  "labels": [
+    "math",
+    "multichoice",
+    "typed-answer",
+    "chrome",
+    "firefox",
+    "safari",
+    "edge"
+  ],
+  "defaultParams": {
+    "a": 7,
+    "b": 5,
+    "operation": "add",
+    "answerMode": "choice",
+    "seconds": 0
+  },
+  "features": {
+    "breathing": {
+      "title": "Breathing bonus",
+      "description": "Optional pause that covers the answers, keeps the equation visible, then resets the full countdown.",
+      "defaultEnabled": true,
+      "defaultParams": {
+        "durationSeconds": 10
+      },
+      "parameters": {
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "title": "Duration (seconds)",
+          "description": "Length of the breathing pause. Applies in the game and in standalone math drills."
+        }
+      },
+      "labels": [
+        "wellbeing",
+        "pause",
+        "timer-reset"
+      ]
+    }
+  }
 }

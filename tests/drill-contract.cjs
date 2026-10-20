@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const contract=require('../drill-modals/helpers/contract.js'),m=require('../drill-modals/hebrew-reading/drill.json');
+const contract=require('../drill-modals/helpers/contract.js'),m=require('../drill-modals/word-reading/drill.json');
 const runner=require('../drill-modals/runner/state.js');
 const url=runner.link('https://example.com/drills/?old=1',m.id,{word:'דג',sound:false});
 const state=runner.fromURL(url);assert.equal(state.id,m.id);assert(state.run);assert.equal(runner.parse(state.text,m).word,'דג');assert.equal(runner.parse(state.text,m).sound,false);

@@ -1,7 +1,7 @@
 (async function(){
   const status=document.getElementById('status'),list=document.getElementById('examples');
   try{
-    const entries=await DrillHost.list(),filters=['language','level','proficiency','letters','groups'];
+    const entries=await DrillHost.list(),filters=['language','level','proficiency','letters','groups','labels'];
     for(const key of filters){
       const values=entries.flatMap(({metadata:m})=>key==='level'?[m.difficulty.level]:key==='proficiency'?[m.proficiency.value]:Array.isArray(m[key])?m[key]:[m[key]]);
       for(const value of [...new Set(values)]){const option=document.createElement('option');option.value=value;option.textContent=value;document.getElementById(key).appendChild(option);}
@@ -12,7 +12,7 @@
       list.replaceChildren();
       for(const {metadata:m} of entries.filter(e=>DrillMetadata.matches(e.metadata,query))){
         const card=document.createElement('article');card.className='example';
-        const title=document.createElement('h2');title.textContent=m.title;title.lang=m.language;
+        const title=document.createElement('h2');title.textContent=m.title;title.lang='en';
         const description=document.createElement('p');description.textContent=m.difficulty.description;
         const tags=document.createElement('p');tags.className='tags';tags.textContent=`${m.language} · level ${m.difficulty.level} · ${m.proficiency.value} · ${m.groups.join(' / ')}`;
         const button=document.createElement('button');button.className='launch';button.textContent='Open in runner';

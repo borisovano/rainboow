@@ -65,7 +65,7 @@
   function createDialog(options={}){
     const doc=options.document||document,host=options.host||doc.body,prefix=options.idPrefix||`math-dialog-${++nextId}`;
     let config=merge(defaults,options), state={question:{text:'',options:[]},title:config.labels.title,hint:'',timer:null}, opened=false,disposed=false,covered=false,locked=false,previousFocus=null;
-    let answers=[],cleanups=[],themeKeys=[],background=[],coveredControls=new Map(),answerBody=null;
+    let answers=[],cleanups=[],themeKeys=[],background=[],coveredControls=new Map(),answerBody=null,bonusArea=null;
     const ids=options.ids||{};
     const node=(tag,cls,text,key)=>{const n=element(doc,tag,cls,text);if(key)n.id=ids[key]||`${prefix}-${key}`;return n;};
     const overlay=node('div','md-overlay',undefined,'overlay'),card=node('div','md-card'),content=node('div','md-content',undefined,'content'),cover=node('div','md-cover',undefined,'cover');
@@ -93,6 +93,7 @@
       answerBody=node('div','md-answer-body');
       if(resolved.answers)answerBody.appendChild(resolved.answers);
       const responseArea=node('div','md-response-area');responseArea.appendChild(answerBody);responseArea.appendChild(cover);resolved.answers=responseArea;
+      bonusArea=node('div','md-bonus-area');if(resolved.bonus)bonusArea.appendChild(resolved.bonus);resolved.bonus=bonusArea;
       if(config.layout){const layout=config.layout(ctx,resolved);if(layout)content.appendChild(layout);}
       else for(const n of Object.values(resolved))if(n)content.appendChild(n);
       api.setTimer(state.timer);api.setHint(state.hint);
@@ -122,6 +123,14 @@
       setTimer(value){state.timer=value;const n=content.querySelector('#'+(ids.timer||`${prefix}-timer`));if(n){n.hidden=value===null;n.textContent=value===null?'':String(value);}return api;},
       setHint(text){state.hint=text;const n=content.querySelector('#'+(ids.hint||`${prefix}-hint`));if(n)n.textContent=text;return api;},
       getHint(){return state.hint;},
+      setBreathing(value){
+        config.breathing=value;bonusArea?.replaceChildren();
+        const renderer=config.slots.bonus===undefined?parts.bonus:config.slots.bonus;
+        const button=renderer?.(context());if(button)bonusArea?.appendChild(button);
+        const control=content.querySelector('#'+(ids.breathButton||`${prefix}-breathButton`));if(control)control.disabled=covered||locked;
+        return api;
+      },
+      setBreathingDuration(seconds){cover.style.setProperty('--md-breath-duration',seconds+'s');return api;},
       setCover(value){
         const next=!!value;
         if(next&&!covered)coveredControls=new Map(answers.map(({control})=>[control,control.disabled]));

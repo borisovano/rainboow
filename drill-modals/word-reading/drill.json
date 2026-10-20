@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 2,
+  "id": "word-reading",
+  "title": "Hebrew Word Reading",
+  "entry": "index.html",
+  "subject": "language-arts",
+  "language": "he-IL",
+  "direction": "rtl",
+  "difficulty": {
+    "level": 1,
+    "scale": "adventure-drills-v1",
+    "description": "Configurable word-reading drill: class 1 uses 2 letters, class 2 uses 3, class 3 uses 4, class 4 uses 5. Letter count is a game setting, not a validated school proficiency standard."
+  },
+  "proficiency": {
+    "scheme": "hebrew-early-literacy-v1",
+    "value": "beginning-word-reader",
+    "description": "Recognizes Hebrew letters and decodes pointed words from two to five letters; not a CEFR rating or a phonetic assessment."
+  },
+  "skills": [
+    "hebrew-word-reading",
+    "letter-sound-association",
+    "niqqud-decoding"
+  ],
+  "gameLevels": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "groups": [
+    "reading",
+    "friend-rescue",
+    "stage-lock"
+  ],
+  "tags": [
+    "hebrew",
+    "early-literacy",
+    "pointed-text",
+    "two-letter-words",
+    "three-letter-words",
+    "read-aloud",
+    "four-letter-words",
+    "five-letter-words"
+  ],
+  "letters": [
+    "alef",
+    "bet",
+    "gimel",
+    "dalet",
+    "he",
+    "vav",
+    "het",
+    "tet",
+    "yod",
+    "kaf",
+    "lamed",
+    "final-mem",
+    "mem",
+    "final-nun",
+    "nun",
+    "samekh",
+    "ayin",
+    "pe",
+    "final-tsadi",
+    "resh",
+    "shin",
+    "tav"
+  ],
+  "content": {
+    "source": "words.js",
+    "script": "Hebrew",
+    "itemCount": 36,
+    "wordLengths": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "niqqud": true
+  },
+  "capabilities": [
+    "microphone",
+    "speech-synthesis"
+  ],
+  "assessment": {
+    "methods": [
+      "speech-transcript",
+      "adult-confirmed"
+    ],
+    "success": "One whole-word transcript match after stripping niqqud and punctuation and accepting documented full-spelling variants, or explicit adult confirmation. Automatically returns success after brief feedback; the game owns rescue and gate rewards. No phonetic pronunciation scoring."
+  },
+  "source": {
+    "project": "hebrew-reading-lab",
+    "adaptation": "Original HTML, styling, word bank and reading behavior retained; game completion bridge and adult fallback added."
+  },
+  "parameters": {
+    "wordIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000,
+      "description": "Starting index within the filtered word bank; wraps around.",
+      "title": "Starting word index"
+    },
+    "wordLength": {
+      "type": "string",
+      "enum": [
+        "grade",
+        "all",
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "description": "Use the selected grade, or override the length for manual exploration.",
+      "title": "Word length"
+    },
+    "word": {
+      "type": "string",
+      "description": "Optional exact word (with or without niqqud). Must be in the filtered word bank.",
+      "maxLength": 40,
+      "title": "Exact word (optional)"
+    },
+    "sound": {
+      "type": "boolean",
+      "description": "Enable optional success and retry sounds.",
+      "title": "Sound effects"
+    },
+    "allowAdultConfirmation": {
+      "type": "boolean",
+      "description": "Offer explicit adult confirmation when speech recognition is unavailable.",
+      "title": "Adult confirmation"
+    },
+    "grade": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "Selected school class: 1 → 2 letters, 2 → 3, 3 → 4, 4 → 5. Used when wordLength is grade.",
+      "title": "Class level"
+    }
+  },
+  "examples": [
+    {
+      "name": "Two-letter word, quiet",
+      "params": {
+        "wordIndex": 0,
+        "wordLength": "2",
+        "sound": false
+      }
+    },
+    {
+      "name": "Three-letter word",
+      "params": {
+        "wordIndex": 1,
+        "wordLength": "3"
+      }
+    },
+    {
+      "name": "Speech only",
+      "params": {
+        "wordIndex": 1,
+        "allowAdultConfirmation": false
+      }
+    },
+    {
+      "name": "Class 3, four letters",
+      "params": {
+        "grade": 3,
+        "wordIndex": 4
+      }
+    },
+    {
+      "name": "Class 4, five letters",
+      "params": {
+        "grade": 4,
+        "wordIndex": 7
+      }
+    }
+  ],
+  "gradeBands": [
+    {
+      "grade": 1,
+      "wordLength": 2
+    },
+    {
+      "grade": 2,
+      "wordLength": 3
+    },
+    {
+      "grade": 3,
+      "wordLength": 4
+    },
+    {
+      "grade": 4,
+      "wordLength": 5
+    }
+  ],
+  "aliases": [
+    "hebrew-reading"
+  ],
+  "labels": [
+    "language",
+    "hebrew",
+    "reading",
+    "speech",
+    "chrome",
+    "adult-confirmation"
+  ],
+  "defaultParams": {
+    "wordIndex": 0,
+    "wordLength": "grade",
+    "word": "",
+    "sound": true,
+    "allowAdultConfirmation": true,
+    "grade": 1
+  },
+  "features": {},
+  "compatibility": {
+    "speechRecognition": "Chrome recommended; availability depends on browser and device. Adult confirmation works without speech recognition.",
+    "fallback": "Explicit adult confirmation when enabled."
+  }
+}

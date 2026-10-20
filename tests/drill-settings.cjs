@@ -1,0 +1,34 @@
+const assert=require('node:assert/strict');
+const {createStore,STORAGE_KEY}=require('../dist/features/flags.js');
+const contract=require('../drill-modals/helpers/contract.js'),math=require('../drill-modals/math/drill.json');
+const data=new Map(),handlers={};
+const env={localStorage:{getItem:k=>data.get(k),setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},addEventListener:(n,fn)=>handlers[n]=fn};
+const flags=createStore(env),other=createStore({...env,addEventListener:(n,fn)=>handlers['other-'+n]=fn});
+assert.equal(flags.enabled('math.breathing'),true);
+assert.deepEqual(flags.drillParams('math').features.breathing,{enabled:true,durationSeconds:10});
+assert.equal(flags.drillParams('arithmetic').a,7,'Legacy aliases resolve');
+flags.setDrillParams('math',{answerMode:'typed',features:{breathing:{durationSeconds:14}}});
+handlers['other-storage']({key:STORAGE_KEY});
+assert.equal(other.drillParams('math').features.breathing.durationSeconds,14);
+assert.equal(other.drillParams('math').answerMode,'typed');
+flags.setOverride('math.breathing',false);assert.equal(flags.drillParams('math').features.breathing.enabled,false);
+assert.equal(flags.drillParams('math',{features:{breathing:{enabled:true}}}).features.breathing.durationSeconds,14,'Partial nested test overrides retain configured duration');
+const link=flags.gameLink('https://example.test/','moon'),pinned=createStore({...env,location:{search:new URL(link).search}});
+assert.equal(pinned.drillSource('math'),'url');
+assert.equal(pinned.drillParams('math').features.breathing.durationSeconds,14);
+assert.equal(pinned.enabled('math.breathing'),false);
+flags.resetDrill('math');assert.equal(flags.enabled('math.breathing'),true);assert.equal(flags.drillParams('math').features.breathing.durationSeconds,10);
+assert.equal(pinned.drillParams('math').features.breathing.durationSeconds,14,'Shared test stays pinned');
+assert.equal(createStore({...env,location:{search:'?ff.math.breathing=0'}}).enabled('math.breathing'),false);
+for(const features of [{breathing:{durationSeconds:0}},{breathing:{durationSeconds:61}},{breathing:{durationSeconds:1.5}},{breathing:{enabled:'false'}},{breathing:{surprise:1}},{unknown:{enabled:true}}]){
+ assert.throws(()=>contract.parameters(math,{features}));assert.throws(()=>flags.setDrillParams('math',{features}));
+}
+assert.equal(flags.drillParams('math').features.breathing.durationSeconds,10,'Rejected writes leave settings intact');
+const invalid=createStore({...env,location:{search:'?dp.math='+encodeURIComponent('{"features":{"breathing":{"durationSeconds":-2}}}')}});
+assert.equal(invalid.drillParams('math').features.breathing.durationSeconds,10);
+data.set(STORAGE_KEY,JSON.stringify({version:1,overrides:{pipCharacter:true},drills:{math:{features:{breathing:{durationSeconds:0}}}}}));
+const migrated=createStore(env);assert(migrated.enabled('pipCharacter'));assert.equal(migrated.drillParams('math').features.breathing.durationSeconds,10);
+const memory=createStore();assert.equal(memory.setDrillParams('math',{features:{breathing:{enabled:false,durationSeconds:8}}}),false);
+const recovered=createStore({location:{search:new URL(memory.gameLink('https://example.test/')).search}});
+assert.equal(recovered.enabled('math.breathing'),false);assert.equal(recovered.drillParams('math').features.breathing.durationSeconds,8);
+console.log('PASS: manifest-owned defaults, nested breathing flag/parameters, cross-tab sync, URL pins, alias migration, validation and storage fallback.');

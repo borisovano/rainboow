@@ -1,5 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),{spawnSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),args=process.argv.slice(2);
+require('./drill-registry.cjs')();
 const catalog=JSON.parse(fs.readFileSync(path.join(root,'drill-modals/catalog.json')));
 const ids=catalog.map(file=>file.split('/')[0]);
 let folders=[];

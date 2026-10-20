@@ -9,7 +9,7 @@ const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRend
 const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
 const handlers={};
 const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(name,fn){handlers[name]=fn;}},requestAnimationFrame(){},setTimeout(){},setInterval(){ctx.intervalStarts=(ctx.intervalStarts||0)+1;},clearInterval(){},console};
-let opened;ctx.DrillHost={open(id,options){opened={id,...options};return Promise.resolve();}};vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/arithmetic',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+let opened;ctx.DrillHost={open(id,options){opened={id,...options};return Promise.resolve();}};ctx.GameFeatures=require('../dist/features/flags.js').createStore();vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/math',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 vm.runInContext(`
 const friend=interactables.find(o=>o.userData.type==='npc_gate'&&!o.userData.realm);
 if(!friend)throw Error('Missing Earth friend');
@@ -17,7 +17,7 @@ gameState='PLAYING';keys.up=true;const beforeScore=score;
 triggerChallenge(friend);
 if(gameState!=='CHALLENGE'||currentChallenge!==null||keys.up)throw Error('Did not pause for reading');
 `,ctx);
-assert.equal(opened.id,'hebrew-reading');assert.equal(opened.dismissible,false);assert.equal(opened.context.gameLevel,1);assert.equal(opened.params.wordIndex,0);
+assert.equal(opened.id,'word-reading');assert.equal(opened.dismissible,false);assert.equal(opened.context.gameLevel,1);assert.equal(opened.params.wordIndex,0);
 opened.onCancel();
 vm.runInContext(`if(gameState!=='PLAYING'||friend.userData.cleared||score!==beforeScore)throw Error('Cancellation granted reward');simulationTime+=4;triggerChallenge(friend);`,ctx);
 opened.onComplete();opened.onComplete();
@@ -28,7 +28,7 @@ function ensure(value,message){if(!value)throw Error(message);}
 function solveReading(obstacle,level){
  gameState='PLAYING';selectedGrade=level;const before=readingChallengesCompleted;const savedScore=score;const multiplier=currentRealm==='rainbow'&&rainbowPowers.bonus?2:1;
  triggerChallenge(obstacle);
- const call=testOpened();ensure(call.id==='hebrew-reading'&&call.context.gameLevel===level&&call.context.realm===currentRealm,'Wrong drill or realm metadata');
+ const call=testOpened();ensure(call.id==='word-reading'&&call.context.gameLevel===level&&call.context.realm===currentRealm,'Wrong drill or realm metadata');
  ensure(call.params.grade===selectedGrade&&call.params.wordIndex===before&&currentChallenge===null,'Reading sequence reset or math opened');
  completeReading();ensure(obstacle.userData.cleared&&readingChallengesCompleted===before+1,'Completion not exactly once');
  ensure(score===savedScore+(obstacle.userData.config?.score??10)*multiplier,'Reward changed');

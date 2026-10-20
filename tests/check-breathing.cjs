@@ -8,7 +8,7 @@ class Obj {constructor(geometry,material){this.material=material;this.id=++objec
 const THREE=new Proxy({Vector3:V,Clock:class{getDelta(){return 1/60;}},WebGLRenderer:class extends Obj{constructor(){super();this.shadowMap={};this.domElement=document.createElement("canvas");}},Color:class{lerpColors(){return this;}},CanvasTexture:class{constructor(){this.repeat={set(){}};}}},{get:(o,k)=>o[k]||Obj});
 const document=require('./helpers/dom.cjs').createDocument({autocreate:true});
 const ctx={THREE,Tone:{PolySynth:class{constructor(){this.volume={};}toDestination(){return this;}},Synth:{},context:{state:'suspended'}},document,window:{innerWidth:1200,innerHeight:800,addEventListener(){}},requestAnimationFrame(){},setTimeout(){},setInterval(fn){const id=ctx.intervalStarts=(ctx.intervalStarts||0)+1;(ctx.intervals??=new Map()).set(id,fn);return id;},clearInterval(id){ctx.intervals?.delete(id);},console};
-vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/arithmetic',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
+ctx.GameFeatures=require('../dist/features/flags.js').createStore();vm.createContext(ctx);for(const file of ['math-dialog.js','presets.js','examples/number-entry.js'])vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../drill-modals/math',file),'utf8'),ctx);vm.runInContext(fs.readFileSync(require('path').join(__dirname,'../dist/maze.js'),'utf8'),ctx);vm.runInContext(src,ctx);
 vm.runInContext(`
 const enemy=predators[0];gameState='PLAYING';keys.up=true;
 const initialPosition=JSON.stringify(playerGroup.position),initialEnemy=JSON.stringify(enemy.mesh.position),initialTime=simulationTime;
@@ -19,7 +19,7 @@ if(!bonus||bonus.disabled)throw Error('Optional breath button missing');
 for(let i=0;i<7;i++)globalThis.intervals.get(predatorInterval)();
 if(predatorTimeLeft!==23)throw Error('Countdown not running');
 currentMistakes=1;bonus.click();
-if(gameState!=='BREATHING'||breathingSecondsLeft!==5||globalThis.intervals.size)throw Error('Optional pause did not stop the countdown');
+if(gameState!=='BREATHING'||breathingSecondsLeft!==10||globalThis.intervals.size)throw Error('Optional pause did not stop the countdown');
 if(!document.getElementById('breathing-card').classList.contains('active')||!document.getElementById('ui-layer').inert)throw Error('Banner missing');
 if(document.getElementById('challenge-content').inert||document.getElementById('challenge-content').classList.contains('breathing'))throw Error('Question was hidden or blocked');
 if(!document.querySelector('.md-answer-body').inert||!bonus.disabled||document.querySelectorAll('.answer-btn').some(b=>!b.disabled))throw Error('Responses must be blocked during breathing');
@@ -37,7 +37,7 @@ if(gameState!=='PREDATOR_CHALLENGE'||activeObstacle!==enemy||predatorTimeLeft!==
 if(document.getElementById('breathing-card').classList.contains('active')||bonus.disabled)throw Error('Breathing UI not reset');
 updateBreathingPause(600);if(globalThis.intervalStarts!==2)throw Error('Duplicate timer');
 // Optional bonus can be chosen again, with no overlapping timers.
-bonus.click();updateBreathingPause(5);if(globalThis.intervals.size!==1)throw Error('Repeated bonus duplicated countdown');
+bonus.click();updateBreathingPause(10);if(globalThis.intervals.size!==1)throw Error('Repeated bonus duplicated countdown');
 challengeDialog.lockAnswers();requestBreathingBonus();if(gameState!=='PREDATOR_CHALLENGE')throw Error('Bonus accepted after answer lock');
 challengeDialog.hide();gameState='PLAYING';powerups.godMode=true;triggerPredatorChallenge(enemy);
 if(gameState!=='PREDATOR_DEATH')throw Error('Invincibility interrupted');
@@ -49,11 +49,20 @@ for(const realm of ['earth','moon','rainbow']) {
  gameState='PLAYING';currentRealm=realm;rainbowPowers.clock=realm==='rainbow';
  triggerPredatorChallenge(realm==='rainbow'?cloud:enemy);
  if(gameState!=='PREDATOR_CHALLENGE'||challengeDialog.isCovered)throw Error('Breathing was made mandatory');
- predatorTimeLeft=2;requestBreathingBonus();updateBreathingPause(5);
+ predatorTimeLeft=2;requestBreathingBonus();updateBreathingPause(10);
  if(predatorTimeLeft!==(realm==='rainbow'?45:30))throw Error('Full time bonus incorrect');
 }
 clearInterval(predatorInterval);gameState='CHALLENGE';renderGameChallenge({text:'2 + 3 = ?',answer:5,options:[4,5,6,7]},{title:'Practice'});challengeDialog.show();
-const started=globalThis.intervalStarts;requestBreathingBonus();updateBreathingPause(5);
+const started=globalThis.intervalStarts;requestBreathingBonus();updateBreathingPause(10);
 if(gameState!=='CHALLENGE'||globalThis.intervalStarts!==started)throw Error('Untimed challenge acquired a countdown');
+// Flag changes update the live button without replacing the question.
+GameFeatures.setOverride('math.breathing',false);
+if(document.body.querySelector('.md-breath-button'))throw Error('Disabled breath button still visible');
+requestBreathingBonus();if(gameState!=='CHALLENGE')throw Error('Disabled bonus still works');
+GameFeatures.setDrillParams('math',{features:{breathing:{durationSeconds:12,enabled:true}}});
+requestBreathingBonus();if(breathingSecondsLeft!==12)throw Error('Custom duration ignored');
+GameFeatures.setOverride('math.breathing',false);updateBreathingPause(11.9);
+if(gameState!=='BREATHING')throw Error('Mid-pause toggle interrupted active pause');
+updateBreathingPause(.1);if(gameState!=='CHALLENGE'||document.body.querySelector('.md-breath-button'))throw Error('Pause failed to finish after flag change');
 `,ctx);
-console.log('PASS: optional breathing, immediately visible question, blocked answers only, five visible seconds, full countdown reset, repeated bonus, answer lock, untimed questions, cloak and all realms.');
+console.log('PASS: optional breathing, immediately visible question, blocked answers only, ten visible seconds, full countdown reset, repeated bonus, answer lock, untimed questions, cloak and all realms.');
