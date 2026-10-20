@@ -1,0 +1,109 @@
+{
+  "character": "pip",
+  "attachment": "Body_Control",
+  "glTFUp": "+Y",
+  "glTFFront": "+Z",
+  "rootTransforms": "identity",
+  "blender": "5.2.1 LTS",
+  "glbBytes": 1022948,
+  "triangles": 47812,
+  "wearables": [
+    {
+      "id": "glasses",
+      "root": "Wearable_glasses",
+      "category": "upper",
+      "triangles": 1700,
+      "meshes": 1,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "goggles",
+      "root": "Wearable_goggles",
+      "category": "upper",
+      "triangles": 3888,
+      "meshes": 3,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "crown",
+      "root": "Wearable_crown",
+      "category": "upper",
+      "triangles": 3608,
+      "meshes": 3,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "beanie",
+      "root": "Wearable_beanie",
+      "category": "upper",
+      "triangles": 4048,
+      "meshes": 3,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "wizard",
+      "root": "Wearable_wizard",
+      "category": "upper",
+      "triangles": 4576,
+      "meshes": 2,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "headphones",
+      "root": "Wearable_headphones",
+      "category": "upper",
+      "triangles": 3468,
+      "meshes": 3,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "bowtie",
+      "root": "Wearable_bowtie",
+      "category": "lower",
+      "triangles": 3616,
+      "meshes": 2,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "tie",
+      "root": "Wearable_tie",
+      "category": "lower",
+      "triangles": 1568,
+      "meshes": 2,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "necklace",
+      "root": "Wearable_necklace",
+      "category": "lower",
+      "triangles": 7836,
+      "meshes": 1,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "scarf",
+      "root": "Wearable_scarf",
+      "category": "lower",
+      "triangles": 5152,
+      "meshes": 6,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "medal",
+      "root": "Wearable_medal",
+      "category": "lower",
+      "triangles": 2768,
+      "meshes": 3,
+      "hideCharacterMeshes": []
+    },
+    {
+      "id": "bandana",
+      "root": "Wearable_bandana",
+      "category": "lower",
+      "triangles": 5584,
+      "meshes": 2,
+      "hideCharacterMeshes": []
+    }
+  ],
+  "source": "source/pip-wearables.blend"
+}

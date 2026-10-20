@@ -11,7 +11,9 @@
     <script src="drills/registry.js"></script>
     <script src="drills/helpers/contract.js"></script>
     <script src="features/flags.js"></script>
+    <script src="character-studio/3d/wearables.js"></script>
     <script src="features/pip-avatar.js"></script>
+    <script src="features/design-studio-host.js"></script>
     <link rel="stylesheet" href="drills/styles/math-dialog.css">
     <link rel="stylesheet" href="drills/styles/host.css">
     <link rel="stylesheet" href="features/character-customization.css">
@@ -111,9 +113,13 @@
         </div>
     </div>
 
+    <dialog id="design-studio" aria-labelledby="design-studio-title">
+        <div class="design-studio-heading"><h2 id="design-studio-title">סטודיו לעיצוב · 300 כוכבים</h2><button type="button" onclick="closeCharacterCustomization()" aria-label="סגירת הסטודיו בלי שינוי">✕</button></div>
+        <iframe id="design-studio-frame" title="סטודיו לעיצוב דמויות ואביזרים בתלת־ממד"></iframe>
+    </dialog>
     <dialog id="character-customization" aria-labelledby="customization-title" aria-describedby="customization-help">
         <h2 id="customization-title">בחרו את הדמות שלכם</h2>
-        <p id="customization-help">הגעתם ל־200 נקודות! המשחק מחכה בזמן שאתם בוחרים.</p>
+        <p id="customization-help">הגעתם ל־200 נקודות! ב־300 נקודות נפתח גם הסטודיו עם אביזרים.</p>
         <div id="character-choices" role="group" aria-label="דמויות לבחירה"></div>
         <div class="customization-actions"><button id="apply-character" type="button" onclick="applyCharacterCustomization()">בחרו בדמות וחזרו למשחק</button><button id="cancel-character" type="button" onclick="closeCharacterCustomization()">חזרה בלי שינוי</button></div>
     </dialog>
@@ -214,6 +220,7 @@
     let selectedGrade = 1;
     let score = 0;
     let customizedCharacter = null, customizationDraft = null, customizationAnnounced = false;
+    let customizedOutfit = null, studioAnnounced = false;
     let currentChallenge = null;
     let activeObstacle = null;
 
@@ -897,6 +904,9 @@
     // Visual-only character swap: monsterRig still owns collision size, growth, and death.
     const pipAvatar = typeof PipPlayerAvatar !== 'undefined' && typeof GameFeatures !== 'undefined' ? PipPlayerAvatar.create({
         THREE, rig:monsterRig, classicParts:[body,rightEye,rightPupil,leftEye,leftPupil],
+        onWearablesStatus(state) {
+            if(state==='error')document.getElementById('customization-notice').textContent='האביזרים לא נטענו. אפשר להמשיך לשחק ולנסות שוב בסטודיו.';
+        },
         onStatus(state) {
             const label=document.getElementById('player-avatar-status');
             label.dataset.character=state;
@@ -910,19 +920,39 @@
     }
     function applyCharacterModel() {
         const choice=activeCustomization();
-        if(pipAvatar)pipAvatar.setEnabled(!!choice||GameFeatures.enabled('pipCharacter'),choice||GameFeatures.globalParams().character);
+        if(pipAvatar)pipAvatar.setEnabled(!!choice||GameFeatures.enabled('pipCharacter'),choice||GameFeatures.globalParams().character,studioUnlocked()?customizedOutfit||{}:{});
     }
+    function studioUnlocked() {return GameFeatures.enabled('characterCustomization')&&GameFeatures.enabled('designStudio')&&score>=300;}
+    const designStudioHost=typeof DesignStudioHost!=='undefined'?DesignStudioHost.create({
+        env:window,dialog:document.getElementById('design-studio'),frame:document.getElementById('design-studio-frame'),
+        onCancel:()=>closeCharacterCustomization(),
+        onApply(design) {
+            if(gameState!=='CUSTOMIZING'||!designStudioHost.isOpen()||!studioUnlocked())return;
+            customizedCharacter=design.character;customizedOutfit=CharacterWearables.sanitize(design);
+            CharacterWearables.savePreset(window,design);applyCharacterModel();closeCharacterCustomization();
+            document.getElementById('customization-notice').textContent='הדמות והאביזרים מוכנים. ממשיכים בהרפתקה!';
+        }
+    }):null;
+    window.openDesignStudio=function(){
+        if(gameState!=='PLAYING'||!studioUnlocked()||!designStudioHost)return false;
+        gameState='CUSTOMIZING';Object.keys(keys).forEach(key=>keys[key]=false);moonShortcut='';cancelShortcutHammer();
+        const saved=CharacterWearables.readPreset(window);
+        designStudioHost.open({...CharacterWearables.sanitize(customizedOutfit||saved),character:activeCustomization()||saved?.character||GameFeatures.globalParams().character});
+        return true;
+    };
     function refreshCharacterCustomization() {
         const enabled=GameFeatures.enabled('characterCustomization'),unlocked=score>=200;
         const button=document.getElementById('customize-character');
         button.hidden=!enabled;button.disabled=!unlocked;
         document.getElementById('game-container').classList.toggle('customization-enabled',enabled);
-        button.textContent=unlocked?'🎨 עיצוב דמות':'🔒 עיצוב דמות · '+score+'/200';
+        button.textContent=studioUnlocked()?'🎨 סטודיו לעיצוב':unlocked?(GameFeatures.enabled('designStudio')?'🎨 עיצוב דמות · סטודיו ב־300':'🎨 עיצוב דמות'):'🔒 עיצוב דמות · '+score+'/200';
         if(enabled&&unlocked&&!customizationAnnounced){
             customizationAnnounced=true;
             document.getElementById('customization-notice').textContent='עיצוב הדמות נפתח! בחרו דמות חדשה 🎉';
         }
+        if(studioUnlocked()&&!studioAnnounced){studioAnnounced=true;document.getElementById('customization-notice').textContent='הגעתם ל־300! הסטודיו והאביזרים נפתחו 🎉';}
         if(!enabled){document.getElementById('customization-notice').textContent='';closeCharacterCustomization();}
+        else if(designStudioHost?.isOpen()&&!studioUnlocked())closeCharacterCustomization();
     }
     const customizationCharacters=['pip','moss','sunny','luna'];
     function selectCustomization(id) {
@@ -931,8 +961,10 @@
         for(const button of document.getElementById('character-choices').children)button.setAttribute('aria-pressed',String(button.getAttribute('data-character')===id));
     }
     window.openCharacterCustomization = function() {
+        if(studioUnlocked()&&designStudioHost)return window.openDesignStudio();
         if(gameState!=='PLAYING'||!GameFeatures.enabled('characterCustomization')||score<200)return false;
         gameState='CUSTOMIZING';Object.keys(keys).forEach(key=>keys[key]=false);moonShortcut='';cancelShortcutHammer();
+        document.getElementById('customization-help').textContent=GameFeatures.enabled('designStudio')?'הגעתם ל־200 נקודות! ב־300 נקודות נפתח גם הסטודיו עם אביזרים.':'הגעתם ל־200 נקודות! המשחק מחכה בזמן שאתם בוחרים.';
         customizationDraft=activeCustomization()||GameFeatures.globalParams().character;
         const choices=document.getElementById('character-choices');choices.replaceChildren();
         for(const id of customizationCharacters){
@@ -948,6 +980,7 @@
     function closeCharacterCustomization() {
         if(gameState!=='CUSTOMIZING')return;
         document.getElementById('character-customization').close();
+        designStudioHost?.close();
         gameState='PLAYING';Object.keys(keys).forEach(key=>keys[key]=false);moonShortcut='';cancelShortcutHammer();
         customizationDraft=null;renderer.domElement.focus();
     }

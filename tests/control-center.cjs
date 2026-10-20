@@ -25,3 +25,6 @@ const a=document.getElementById('param-a');a.value='21';a.oninput();assert.equal
 document.getElementById('nav-math-features').click();const more=document.getElementById('param-features-breathing-durationSeconds');more.value='20';more.oninput();assert.equal(flags.drillParams('math').a,21,'Changing feature settings preserves ordinary parameters');
 document.getElementById('nav-global-parameters').click();const char=document.getElementById('param-character');char.value='luna';char.onchange();assert.equal(flags.globalParams().character,'luna');assert.equal(new URL(document.getElementById('play').href).searchParams.get('character'),'luna');
 console.log('PASS: control center aliases, generated controls, input autosave, validation, nested toggle, label filter and standalone result handoff.');
+
+document.getElementById('nav-wardrobe').click();const wardrobeFrame=document.getElementById('editor').querySelector('iframe');assert.equal(wardrobeFrame.src,'../character-studio/wardrobe/?embedded=1');
+document.getElementById('nav-global-features').click();assert(document.getElementById('flag-designStudio').checked,'Design Studio is available in the same command center and enabled by default');

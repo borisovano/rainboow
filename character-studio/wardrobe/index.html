@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Design Studio · Moon & Rainbow</title><link rel="stylesheet" href="studio.css"><script type="importmap">{"imports":{"three":"../3d/vendor/three.module.js"}}</script><script>if(new URLSearchParams(location.search).has('embedded'))document.documentElement.classList.add('embedded');if(new URLSearchParams(location.search).get('mode')==='game')document.documentElement.classList.add('in-game');</script></head>
+<body><header><a href="../../control-center/?section=characters&amp;part=wardrobe">← Command center</a><h1>Design studio</h1><p>Four characters. Twelve wearables. Your next adventure.</p></header>
+<main class="studio">
+  <section class="preview" aria-label="3D outfit preview">
+    <div class="preview-top"><span id="preview-name">Pip</span><span class="pill" id="fit-label">Fitted in 3D</span></div>
+    <div id="stage"><canvas id="model" tabindex="0" aria-label="Character preview. Drag to rotate and scroll to zoom."></canvas><p id="model-status" role="status">Loading character…</p></div>
+    <div class="views" aria-label="Preview controls"><button id="front">Front</button><button id="back">Back</button><button id="rotate" aria-pressed="false">Rotate</button><button id="walk" aria-pressed="false">Walk</button></div>
+    <p class="hint" id="preview-hint">Drag to rotate · Scroll or pinch to zoom</p>
+  </section>
+  <section class="choices" aria-label="Outfit choices" data-active="character">
+    <nav class="choice-tabs" aria-label="Choose a part"><button data-tab="character" aria-pressed="true">Character</button><button data-tab="upper" aria-pressed="false">Head & eyes</button><button data-tab="lower" aria-pressed="false">Neck & chest</button></nav>
+    <div class="choice-section" data-section="character">
+    <div class="section-heading"><h2 id="character-title">Character</h2><span>01</span></div><div id="characters" class="characters" role="group" aria-labelledby="character-title"></div>
+    </div><div class="choice-section" data-section="upper"><div class="section-heading"><h2 id="upper-title">Head & eyes</h2><button id="clear-upper" class="clear">Remove</button></div><div id="upper" class="items" role="group" aria-labelledby="upper-title"></div>
+    </div><div class="choice-section" data-section="lower"><div class="section-heading"><h2 id="lower-title">Neck & chest</h2><button id="clear-lower" class="clear">Remove</button></div><div id="lower" class="items" role="group" aria-labelledby="lower-title"></div>
+    </div>
+  </section>
+  <footer class="actions"><div><strong id="outfit-summary">Pip · No wearables</strong><p id="save-status" role="status">The game unlocks this studio at 300 points.</p></div><button id="cancel" hidden>Cancel</button><button id="apply" class="primary" disabled>Save design</button></footer>
+</main>
+<script src="../3d/wearables.js"></script><script type="module" src="studio.js"></script><script src="../../features/embedded-studio.js"></script></body></html>

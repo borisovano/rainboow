@@ -38,3 +38,12 @@ This pass uses geometric detail and materials rather than image-projected surfac
 `tests/character-3d.cjs` reads the actual GLB binary: self-contained buffers, expected durations, animated transform values, geometry counts, Pip body roundness, and deliverable presence for all four models. Browser QA covers animation selection, camera presets, playback, mesh view, and responsive layout. The viewer starts paused when reduced motion is requested; WebGL failures show the rendered image and preserve download links.
 
 Three.js documentation: [loading glTF](https://threejs.org/manual/en/load-gltf.html) and [animation system](https://threejs.org/docs/#api/en/animation/AnimationMixer).
+
+
+## Fitted wearables
+
+The Design Studio uses 12 real 3D accessories for each character: round glasses, explorer goggles, star crown, lilac beanie, headphones, wizard hat, bow tie, lightning tie, moon necklace, rainbow scarf, explorer medal and adventure bandana. The original PNGs serve as selection thumbnails and modeling references; they are not billboard textures in the game.
+
+Run `Blender --background --factory-startup --threads 4 --python source/build_wearables.py` to rebuild the fitted assets. Each `assets/<character>-wearables.glb` has 12 scene roots named `Wearable_<id>`, in the rest coordinates of the corresponding character's `Body_Control`. The shared `wearables.js` attaches them to this control, so walking, breathing and jumping move the outfit with the body. Wearable bounds never participate in player normalization or collision. Crown, beanie and wizard hat temporarily hide conflicting horns/tufts; removing the hat restores them.
+
+Use `/character-studio/wardrobe/` to preview all sides and walk in an outfit. The same editor is embedded in Command Center → Characters → Design studio and in the game after 300 points. One upper and one lower accessory can be selected at a time, keeping combinations simple and avoiding overlapping hats/glasses.

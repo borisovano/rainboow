@@ -2,7 +2,7 @@
   const flags=GameFeatures,$=id=>document.getElementById(id),initial=DrillRunner.fromURL(location.href),query=new URL(location.href).searchParams;
   let selected=flags.drills.find(d=>d.id===initial.id||d.aliases.includes(initial.id))?.id||null;
   let section=selected?'drill':['global-parameters','global-features','drills','characters'].includes(query.get('section'))?query.get('section'):'global-parameters';
-  let part=['parameters','features','images'].includes(query.get('part'))?query.get('part'):'main';
+  let part=['parameters','features','images','wardrobe'].includes(query.get('part'))?query.get('part'):'main';
   let fields=[],formBase={},active=null,running=false,saving=false;
   const node=(tag,cls,text)=>{const el=document.createElement(tag);if(cls)el.className=cls;if(text!==undefined)el.textContent=text;return el;};
   const manifest=()=>flags.drills.find(d=>d.id===selected);
@@ -27,7 +27,8 @@
       const children=node('div','nav-children');for(const [key,title] of [['main','Main'],['parameters','Parameters'],...(Object.keys(d.features).length?[['features','Features']]:[])])nav(children,'nav-'+d.id+'-'+key,title,selected===d.id&&part===key,()=>navigate('drill',d.id,key));group.append(children);list.append(group);
     }
     const studio=$('studio-nav');studio.replaceChildren();studio.append(node('h2',null,'Characters'));
-    nav(studio,'nav-models','3D models',section==='characters'&&part!=='images',()=>navigate('characters'));nav(studio,'nav-images','Images & accessories',section==='characters'&&part==='images',()=>navigate('characters',null,'images'));
+    nav(studio,'nav-wardrobe','Design studio',section==='characters'&&part==='wardrobe',()=>navigate('characters',null,'wardrobe'));
+    nav(studio,'nav-models','3D models',section==='characters'&&part==='main',()=>navigate('characters'));nav(studio,'nav-images','Images & accessories',section==='characters'&&part==='images',()=>navigate('characters',null,'images'));
   }
   function switchControl(id,label,value,disabled,onChange){const wrap=node('label','toggle'),input=node('input'),state=node('span',null,value?'On':'Off');input.type='checkbox';input.id=id;input.checked=value;input.disabled=disabled;input.setAttribute('role','switch');input.setAttribute('aria-label',label);input.onchange=()=>{onChange();state.textContent=input.checked?'On':'Off';};wrap.append(input,state);return {wrap,input};}
   function field(parent,key,spec,value,path,disabled=false){
@@ -97,7 +98,7 @@
     }for(const input of Object.values(inputs))input.onchange=draw;draw();status('');
   }
   function frame(url,label){const iframe=node('iframe','studio-frame');iframe.src=url;iframe.title=label;iframe.allow='clipboard-write';return iframe;}
-  function drawCharacters(){title(part==='images'?'Images & accessories':'3D characters',part==='images'?'Combine a character with accessories and export the image.':'Inspect the models and animations. Use “Use in game” to select a character and enable 3D characters.');$('editor').append(frame(part==='images'?'../character-studio/?embedded=1':'../character-studio/3d/?embedded=1&character='+flags.globalParams().character,part==='images'?'Character image editor':'3D character editor'));status('');}
+  function drawCharacters(){if(part==='wardrobe'){title('Design studio','Fit 3D wearables to any character. Save a design to use when the in-game studio unlocks at 300 points.');$('editor').append(frame('../character-studio/wardrobe/?embedded=1','3D Design Studio'));status('');return;}title(part==='images'?'Images & accessories':'3D characters',part==='images'?'Combine a character with accessories and export the image.':'Inspect the models and animations. Use “Use in game” to select a character and enable 3D characters.');$('editor').append(frame(part==='images'?'../character-studio/?embedded=1':'../character-studio/3d/?embedded=1&character='+flags.globalParams().character,part==='images'?'Character image editor':'3D character editor'));status('');}
   function render(draft){const focus=document.activeElement?.id;fields=[];formBase=draft||(selected?flags.drillParams(selected):flags.globalParams());$('editor').replaceChildren();drawNavigation();document.querySelector('.workspace').classList.toggle('wide-editor',section==='characters');
     if(selected)drawDrill(manifest());else if(section==='global-features')drawFeatures();else if(section==='drills')drawCatalog();else if(section==='characters')drawCharacters();else drawGlobals();refreshLink();if(focus)document.getElementById(focus)?.focus();}
   async function copyLink(link,message){try{await navigator.clipboard.writeText(link);$('copy-status').textContent=message;}catch{const input=$('copy-fallback');input.value=link;input.hidden=false;input.focus();input.select();$('copy-status').textContent='Copy the selected link.';}}

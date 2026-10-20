@@ -1,7 +1,7 @@
 (function(root,factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.PipPlayerAvatar = factory();
-})(typeof window !== 'undefined' ? window : globalThis,function() {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('../../character-studio/3d/wearables.js'));
+  else root.PipPlayerAvatar = factory(root.CharacterWearables);
+})(typeof window !== 'undefined' ? window : globalThis,function(Wearables) {
   'use strict';
   const CLIPS = ['Idle','Walk','Jump','Wave'];
   let loaderPromise;
@@ -28,9 +28,9 @@
       } finally { clearTimeout(timer); }
     });
   }
-  function create({THREE,rig,classicParts,onStatus=()=>{},load=id=>browserLoad(THREE,id)}) {
+  function create({THREE,rig,classicParts,onStatus=()=>{},load=id=>browserLoad(THREE,id),loadWearables=id=>browserLoad(THREE,id+'-wearables'),onWearablesStatus=()=>{}}) {
     let wanted = false, wantedId='pip', visual = null, mixer = null, active = null, activeName = null;
-    let jumpTime = 0, lastState = null;
+    let jumpTime = 0, lastState = null, outfit=Wearables.sanitize();
     let actions = new Map(), materials = [];
     const cached=new Map(),pending=new Map();
     function show(enabled) {
@@ -62,9 +62,22 @@
         if (copy.name === 'Jump') copy.tracks = copy.tracks.filter(track => !/_Root\.position$/.test(track.name));
         actions.set(copy.name,mixer.clipAction(copy));
       }
-      rig.add(wrapper);wrapper.visible=false;return {visual:wrapper,mixer,actions,materials};
+      rig.add(wrapper);wrapper.visible=false;return {visual:wrapper,model:gltf.scene,mixer,actions,materials,wardrobe:null,wardrobePending:null};
     }
-    async function setEnabled(enabled,id='pip') {
+    async function dress(resource,id) {
+      if(!outfit.upper&&!outfit.lower&&!resource.wardrobe){onWearablesStatus('ready');return;}
+      if(!resource.wardrobe){
+        onWearablesStatus('loading');
+        if(!resource.wardrobePending)resource.wardrobePending=Promise.resolve().then(()=>loadWearables(id)).then(gltf=>{
+          resource.wardrobe=Wearables.attach(resource.model,gltf);resource.materials.push(...resource.wardrobe.materials);
+        }).catch(error=>{if(wanted&&wantedId===id)onWearablesStatus('error');console.warn('Wearables could not load; the character remains playable.',error);}).finally(()=>resource.wardrobePending=null);
+        await resource.wardrobePending;
+      }
+      if(!wanted||wantedId!==id||!resource.wardrobe)return;
+      resource.wardrobe.set(outfit);onWearablesStatus('ready');
+    }
+    async function setEnabled(enabled,id='pip',selection={}) {
+      outfit=Wearables.sanitize(selection);
       wanted=!!enabled;wantedId=['pip','moss','sunny','luna'].includes(id)?id:'pip';
       const requested=wantedId;
       if(!wanted){show(false);onStatus('classic');return;}
@@ -83,7 +96,7 @@
       if(visual!==resource.visual){
         ({visual,mixer,actions,materials}=resource);active=null;activeName=null;lastState=null;jumpTime=0;
       }
-      show(true);onStatus(requested);
+      show(true);onStatus(requested);await dress(resource,requested);
     }
     function select(name) {
       if (activeName === name) return;

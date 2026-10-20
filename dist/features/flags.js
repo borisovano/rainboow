@@ -9,6 +9,7 @@
   const definitions=Object.freeze([
     {id:'pipCharacter',title:'3D characters',category:'Characters',defaultValue:false,description:'Start with the selected animated Blender character in every world. Choose a starting character under Global parameters.'},
     {id:'characterCustomization',title:'Character customization at 200 points',category:'Characters',defaultValue:true,description:'Unlock the in-game character picker at 200 points. Choosing a character applies its 3D model for this run. Type bibi during play to add exactly 1,000 testing points.'},
+    {id:'designStudio',title:'Design Studio at 300 points',category:'Characters',defaultValue:true,description:'At 300 points, upgrade character customization to the 3D Design Studio with 12 fitted wearables. Requires Character customization. Saved designs wait in the studio on future runs; each run still needs 300 points.'},
     ...drills.flatMap(drill=>Object.entries(drill.features).map(([id,feature])=>({id:drill.id+'.'+id,owner:drill.id,featureId:id,title:feature.title,description:feature.description,category:drill.title,defaultValue:feature.defaultEnabled})))
   ].map(Object.freeze));
   const manifest=id=>drills.find(d=>d.id===id||d.aliases.includes(id));
