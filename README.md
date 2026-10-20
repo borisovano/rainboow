@@ -14,7 +14,7 @@ npm run build
 
 Open [the game](http://127.0.0.1:8765/), [the standalone drill runner](http://127.0.0.1:8765/drills/), or [the maze](http://127.0.0.1:8765/?stage=maze). Set `PORT=8874 npm start` if the port is occupied. Use HTTP localhost or HTTPS, rather than opening files directly.
 
-The 3D game loads Three.js, Tone.js, Tailwind, and a font from external CDNs. The drill workshop is local; speech recognition may require an online browser service and microphone permission. No Mac Accessibility permission is needed.
+The 3D game includes its matching Three.js renderer locally and loads Tone.js, Tailwind, and a font from external CDNs. The drill workshop is local; speech recognition may require an online browser service and microphone permission. No Mac Accessibility permission is needed.
 
 ## Contribute a drill
 
@@ -28,6 +28,8 @@ The first real example, `drill-modals/hebrew-reading/`, adapts the sibling `hebr
 | --- | --- |
 | `dist/index.html` | Main game, worlds, controls, scoring and rescue integration |
 | `dist/maze.js` | Maze generation, powers and gameplay |
+| `dist/features/` | Feature registry, browser settings, and the optional Pip game avatar |
+| `dist/feature-flags/` | Feature flag controller and shareable world test links |
 | `drill-modals/` | Separate drill folders, shared helpers/styles, runner and unit tests |
 | `build/` | Generated publishable website (ignored by Git) |
 | `dist/assets/` | Game assets |
@@ -57,6 +59,16 @@ Hebrew reading follows the selected class in every world: א׳ = 2 letters, ב׳
 
 ### Character Studio
 
-Open `/character-studio/` for an independent image playground: four original characters, six head/eye accessories, and six neck/body accessories. Stack pieces, drag or adjust their fit, share a look link, and download PNGs or a look recipe. Source, original generated images, and prompts live in [`character-studio/`](character-studio/README.md). The game characters are unchanged.
+Open `/character-studio/` for an independent image playground: four original characters, six head/eye accessories, and six neck/body accessories. Stack pieces, drag or adjust their fit, share a look link, and download PNGs or a look recipe. Source, original generated images, and prompts live in [`character-studio/`](character-studio/README.md).
 
 Open `/character-studio/3d/` to explore **Pip in 3D**: a real Blender model with idle, walk, jump, and wave animations. Orbit the model, inspect its mesh, and download the animated GLB, editable Blender project, or reproducible build script. See the [3D asset workflow](character-studio/3d/README.md).
+
+### Feature flags
+
+Open `/feature-flags/` to enable **Play as Pip** (`pipCharacter`, default **off**). Settings are browser-local, stored under `moon-rainbow.features.v1`, and update ordinary open game tabs through storage events. The controller is a public testing page, not a global administrator console. Reset restores defaults without deleting other game or studio data.
+
+The controller generates a test link for any of the four worlds. `/?stage=moon&ff.pipCharacter=1` pins Pip on; `ff.pipCharacter=0` pins it off. Explicit URL flags take priority over browser settings for that tab and are not saved. Direct world routes also preserve them, e.g. `/maze/?ff.pipCharacter=1`. If browser storage is blocked, use the generated link to carry the current settings into the game.
+
+Pip is a visual swap: the same player position, collision radius, growth, jumping, stage transitions, powers, and death logic apply. The model is loaded only when enabled, with the classic character retained during loading and on failure. Idle/walk/jump follow actual movement; the model's baked vertical hop is removed so physics stays authoritative. New-power screens play Wave. The rainbow cloak affects all Pip materials.
+
+To add a flag, register its stable `id`, title, category, description, and boolean default in `dist/features/flags.js`. The controller and link builder render that registry automatically. Use `GameFeatures.enabled(id)` at the integration point, and `GameFeatures.subscribe(callback)` for live changes. See `tests/feature-flags.cjs` and `tests/pip-avatar.cjs` for storage/URL behavior and actual r128 GLB animation checks.

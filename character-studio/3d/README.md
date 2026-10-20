@@ -1,6 +1,6 @@
 # Pip in 3D
 
-Independent preview: `/character-studio/3d/`. This is a 3D study of the original Pip concept; game avatars and the 2D accessory system are unchanged.
+Independent preview: `/character-studio/3d/`. This is a 3D study of the original Pip concept. The game can use the same model through the optional `pipCharacter` flag at `/feature-flags/`; the 2D accessory system remains separate.
 
 ## Assets and workflow
 

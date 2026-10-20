@@ -6,8 +6,10 @@
     <title>מסע מתמטי — הירח, הקשת והמבוך</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="vendor/three.r128.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="features/flags.js"></script>
+    <script src="features/pip-avatar.js"></script>
     <link rel="stylesheet" href="drills/styles/math-dialog.css">
     <link rel="stylesheet" href="drills/styles/host.css">
     <style>
@@ -28,6 +30,8 @@
         .btn-orange { background: linear-gradient(to bottom, #F97316, #EA580C); }
         .hud-top { display: flex; justify-content: space-between; padding: 1rem; }
         .hud-panel { background: rgba(255, 255, 255, 0.9); border-radius: 16px; padding: 0.5rem 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.5rem; }
+        #feature-controls-link { display:block; margin-inline-start:6px; padding:4px 8px; border-radius:8px; background:#edf2e6; color:#425c43; font-size:11px; white-space:nowrap; pointer-events:auto; }
+        #feature-controls-link:focus-visible { outline:3px solid #744aba; }
         .powerup-panel { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; align-items: flex-start;}
         .powerup-item { background: rgba(255, 255, 255, 0.9); border-radius: 8px; padding: 0.25rem 0.75rem; font-size: 0.9rem; font-weight: bold; border-right: 4px solid; display: none; }
         .powerup-item.active { display: block; }
@@ -65,6 +69,7 @@
                 <div class="hud-panel interactive-ui">
                     <span class="text-2xl">⭐</span>
                     <span id="score-display" class="text-xl text-yellow-600 font-bold">0</span>
+                    <a id="feature-controls-link" href="feature-flags/" target="_blank" rel="noopener" aria-label="הגדרות ניסוי ודמות"><span id="player-avatar-status" role="status" data-character="classic">קלאסי</span> ⚙</a>
                 </div>
                 <div id="rainbow-powers" class="interactive-ui"><div id="rainbow-power-summary"></div><div id="rainbow-power-buttons">
                     <button id="rainbow-dash" onclick="useRainbowPower('dash')">זינוק ⇧</button>
@@ -871,6 +876,22 @@
     monsterRig.add(rightEye, rightPupil, leftEye, leftPupil);
     playerGroup.position.set(0, 0, 0); 
     scene.add(playerGroup);
+    // Visual-only character swap: monsterRig still owns collision size, growth, and death.
+    const pipAvatar = typeof PipPlayerAvatar !== 'undefined' && typeof GameFeatures !== 'undefined' ? PipPlayerAvatar.create({
+        THREE, rig:monsterRig, classicParts:[body,rightEye,rightPupil,leftEye,leftPupil],
+        onStatus(state) {
+            const label=document.getElementById('player-avatar-status');
+            label.dataset.character=state;
+            const pinned=GameFeatures.snapshot().find(flag=>flag.id==='pipCharacter').source==='url';
+            label.textContent=({classic:'קלאסי',loading:'טוען פיפ…',pip:'פיפ 3D',fallback:'קלאסי (תקלה)'})[state]+(pinned?' · 🔗':'');
+            document.getElementById('feature-controls-link').title=(state==='fallback'?'פיפ לא נטען, אפשר להמשיך עם הדמות הקלאסית. ':'')+(pinned?'הדמות נקבעה בקישור הבדיקה. פתחו משחק רגיל לשינויים בזמן אמת.':'פתיחת הגדרות הניסוי והדמות');
+        }
+    }) : null;
+    if(pipAvatar) {
+        const applyCharacterFlag=()=>pipAvatar.setEnabled(GameFeatures.enabled('pipCharacter'));
+        GameFeatures.subscribe(applyCharacterFlag);
+        applyCharacterFlag();
+    }
 
     const questArrow = new THREE.Group();
     const arrowMat = new THREE.MeshLambertMaterial({color: 0xFF3333, emissive: 0x550000});
@@ -1442,9 +1463,12 @@
     window.addEventListener('visibilitychange', () => clock.getDelta());
     let accumulator = 0;
     let simulationTime = 0;
+    let avatarMoving = false, avatarSpeed = 0;
     function animate() {
         requestAnimationFrame(animate);
         const elapsed = clock.getDelta();
+        const avatarStartX=playerGroup.position.x, avatarStartZ=playerGroup.position.z;
+        const avatarStartTime=simulationTime;
         updateMazeRealtime(elapsed);
         if (gameState === 'BREATHING') {
             updateBreathingPause(elapsed);
@@ -1455,6 +1479,17 @@
                 stepGame();
                 accumulator -= 1/60;
             }
+        }
+        if(pipAvatar) {
+            const simulated=simulationTime-avatarStartTime;
+            if(simulated>0) {
+                const distance=Math.hypot(playerGroup.position.x-avatarStartX,playerGroup.position.z-avatarStartZ);
+                avatarMoving=distance>.0001&&distance<20;
+                avatarSpeed=distance/simulated;
+            }
+            pipAvatar.update({delta:document.hidden?0:elapsed,state:gameState,moving:avatarMoving,
+                speed:avatarSpeed,jumping:isJumping,
+                cloaked:currentRealm==='rainbow'&&rainbowTimers.cloakActive>0});
         }
         renderer.render(scene, camera);
     }
