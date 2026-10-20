@@ -14,6 +14,7 @@
     <script src="features/pip-avatar.js"></script>
     <link rel="stylesheet" href="drills/styles/math-dialog.css">
     <link rel="stylesheet" href="drills/styles/host.css">
+    <link rel="stylesheet" href="features/character-customization.css">
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Heebo', sans-serif; background-color: #87CEEB; touch-action: none; user-select: none; transition: background-color 2s; }
         #game-container { position: relative; width: 100vw; height: 100vh; }
@@ -73,6 +74,8 @@
                     <span id="score-display" class="text-xl text-yellow-600 font-bold">0</span>
                     <a id="feature-controls-link" href="control-center/" target="_blank" rel="noopener" aria-label="הגדרות ניסוי ודמות"><span id="player-avatar-status" role="status" data-character="classic">קלאסי</span> ⚙</a>
                 </div>
+                <button id="customize-character" class="interactive-ui" type="button" disabled onclick="openCharacterCustomization()">🔒 עיצוב דמות · 0/200</button>
+                <p id="customization-notice" role="status"></p>
                 <div id="rainbow-powers" class="interactive-ui"><div id="rainbow-power-summary"></div><div id="rainbow-power-buttons">
                     <button id="rainbow-dash" onclick="useRainbowPower('dash')">זינוק ⇧</button>
                     <button id="rainbow-gust" onclick="useRainbowPower('gust')">רוח R</button>
@@ -107,6 +110,13 @@
             <div class="control-btn" id="btn-down" style="position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);">🔽</div>
         </div>
     </div>
+
+    <dialog id="character-customization" aria-labelledby="customization-title" aria-describedby="customization-help">
+        <h2 id="customization-title">בחרו את הדמות שלכם</h2>
+        <p id="customization-help">הגעתם ל־200 נקודות! המשחק מחכה בזמן שאתם בוחרים.</p>
+        <div id="character-choices" role="group" aria-label="דמויות לבחירה"></div>
+        <div class="customization-actions"><button id="apply-character" type="button" onclick="applyCharacterCustomization()">בחרו בדמות וחזרו למשחק</button><button id="cancel-character" type="button" onclick="closeCharacterCustomization()">חזרה בלי שינוי</button></div>
+    </dialog>
 
     <!-- Start Modal -->
     <div id="start-modal" class="modal-overlay active">
@@ -190,6 +200,8 @@
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
+    renderer.domElement.setAttribute('tabindex','-1');
+    renderer.domElement.setAttribute('aria-label','משחק — חיצים לתנועה ורווח לקפיצה');
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -201,6 +213,7 @@
     let gameState = 'START';
     let selectedGrade = 1;
     let score = 0;
+    let customizedCharacter = null, customizationDraft = null, customizationAnnounced = false;
     let currentChallenge = null;
     let activeObstacle = null;
 
@@ -369,9 +382,10 @@
         return bridge || moon;
     }
 
-    function addScore(points) {
-        score += points*(currentRealm==='rainbow'&&rainbowPowers.bonus?2:1);
+    function addScore(points, {applyBonus=true}={}) {
+        score += points*(applyBonus&&currentRealm==='rainbow'&&rainbowPowers.bonus?2:1);
         document.getElementById('score-display').textContent = score;
+        refreshCharacterCustomization();
         if (score >= 50 && !isSpaceRealmOpen) activateSpaceRealm();
     } 
 
@@ -886,16 +900,66 @@
         onStatus(state) {
             const label=document.getElementById('player-avatar-status');
             label.dataset.character=state;
-            const pinned=GameFeatures.snapshot().find(flag=>flag.id==='pipCharacter').source==='url';
+            const pinned=!activeCustomization()&&(GameFeatures.snapshot().find(flag=>flag.id==='pipCharacter').source==='url'||GameFeatures.globalSource('character')==='url');
             label.textContent=({classic:'קלאסי',loading:'טוען דמות…',pip:'פיפ 3D',moss:'מוס 3D',sunny:'סאני 3D',luna:'לונה 3D',fallback:'קלאסי (תקלה)'})[state]+(pinned?' · 🔗':'');
             document.getElementById('feature-controls-link').title=(state==='fallback'?'המודל לא נטען, אפשר להמשיך עם הדמות הקלאסית. ':'')+(pinned?'הדמות נקבעה בקישור הבדיקה. פתחו משחק רגיל לשינויים בזמן אמת.':'פתיחת הגדרות הניסוי והדמות');
         }
     }) : null;
-    if(pipAvatar) {
-        const applyCharacterFlag=()=>pipAvatar.setEnabled(GameFeatures.enabled('pipCharacter'),GameFeatures.globalParams().character);
-        GameFeatures.subscribe(applyCharacterFlag);
-        applyCharacterFlag();
+    function activeCustomization() {
+        return GameFeatures.enabled('characterCustomization') && score>=200 ? customizedCharacter : null;
     }
+    function applyCharacterModel() {
+        const choice=activeCustomization();
+        if(pipAvatar)pipAvatar.setEnabled(!!choice||GameFeatures.enabled('pipCharacter'),choice||GameFeatures.globalParams().character);
+    }
+    function refreshCharacterCustomization() {
+        const enabled=GameFeatures.enabled('characterCustomization'),unlocked=score>=200;
+        const button=document.getElementById('customize-character');
+        button.hidden=!enabled;button.disabled=!unlocked;
+        document.getElementById('game-container').classList.toggle('customization-enabled',enabled);
+        button.textContent=unlocked?'🎨 עיצוב דמות':'🔒 עיצוב דמות · '+score+'/200';
+        if(enabled&&unlocked&&!customizationAnnounced){
+            customizationAnnounced=true;
+            document.getElementById('customization-notice').textContent='עיצוב הדמות נפתח! בחרו דמות חדשה 🎉';
+        }
+        if(!enabled){document.getElementById('customization-notice').textContent='';closeCharacterCustomization();}
+    }
+    const customizationCharacters=['pip','moss','sunny','luna'];
+    function selectCustomization(id) {
+        if(!customizationCharacters.includes(id))return;
+        customizationDraft=id;
+        for(const button of document.getElementById('character-choices').children)button.setAttribute('aria-pressed',String(button.getAttribute('data-character')===id));
+    }
+    window.openCharacterCustomization = function() {
+        if(gameState!=='PLAYING'||!GameFeatures.enabled('characterCustomization')||score<200)return false;
+        gameState='CUSTOMIZING';Object.keys(keys).forEach(key=>keys[key]=false);moonShortcut='';cancelShortcutHammer();
+        customizationDraft=activeCustomization()||GameFeatures.globalParams().character;
+        const choices=document.getElementById('character-choices');choices.replaceChildren();
+        for(const id of customizationCharacters){
+            const button=document.createElement('button'),image=document.createElement('img'),label=document.createElement('span');
+            button.type='button';button.setAttribute('data-character',id);button.onclick=()=>selectCustomization(id);
+            image.src='character-studio/3d/assets/'+id+'-render.png';image.alt='';image.draggable=false;
+            label.textContent=id[0].toUpperCase()+id.slice(1);button.append(image,label);choices.append(button);
+        }
+        selectCustomization(customizationDraft);
+        document.getElementById('character-customization').showModal();
+        choices.children[customizationCharacters.indexOf(customizationDraft)].focus();return true;
+    };
+    function closeCharacterCustomization() {
+        if(gameState!=='CUSTOMIZING')return;
+        document.getElementById('character-customization').close();
+        gameState='PLAYING';Object.keys(keys).forEach(key=>keys[key]=false);moonShortcut='';cancelShortcutHammer();
+        customizationDraft=null;renderer.domElement.focus();
+    }
+    window.closeCharacterCustomization=closeCharacterCustomization;
+    window.applyCharacterCustomization=function() {
+        if(gameState!=='CUSTOMIZING'||!GameFeatures.enabled('characterCustomization')||score<200||!customizationCharacters.includes(customizationDraft))return false;
+        customizedCharacter=customizationDraft;applyCharacterModel();closeCharacterCustomization();
+        document.getElementById('customization-notice').textContent='הדמות נבחרה. ממשיכים לשחק!';return true;
+    };
+    document.getElementById('character-customization').addEventListener('cancel',event=>{event.preventDefault();closeCharacterCustomization();});
+    GameFeatures.subscribe(()=>{refreshCharacterCustomization();applyCharacterModel();});
+    refreshCharacterCustomization();applyCharacterModel();
 
     const questArrow = new THREE.Group();
     const arrowMat = new THREE.MeshLambertMaterial({color: 0xFF3333, emissive: 0x550000});
@@ -916,6 +980,11 @@
     let movementSpeedMultiplier = 1;
     let moonShortcut = '';
     let moonShortcutTime = 0;
+    let shortcutHammerTimer = null;
+    function cancelShortcutHammer(){if(shortcutHammerTimer!==null){clearTimeout(shortcutHammerTimer);shortcutHammerTimer=null;}}
+    function deferShortcutHammer(){
+        shortcutHammerTimer=setTimeout(()=>{shortcutHammerTimer=null;if(gameState==='PLAYING'&&currentRealm==='maze'){moonShortcut='';useMazePower('hammer');}},2000);
+    }
     function openMoonShortcut() {
         activateSpaceRealm();
         spaceWall.position.y = -7;
@@ -961,6 +1030,7 @@
     window.addEventListener('keydown', (e) => {
         if(gameState !== 'PLAYING') { moonShortcut = ''; return; }
         if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            cancelShortcutHammer();
             const now = Date.now();
             if (now - moonShortcutTime > 2000) moonShortcut = '';
             const letter = /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : '';
@@ -974,10 +1044,17 @@
                 movementSpeedMultiplier = 5;
                 document.getElementById('space-warning').classList.remove('hidden');
                 document.getElementById('space-warning').textContent = 'מהירות תנועה ×5 הופעלה! ⚡';return;
+            } else if(moonShortcut.endsWith('bibi')) {
+                moonShortcut='';addScore(1000,{applyBonus:false});
+                document.getElementById('space-warning').classList.remove('hidden');
+                document.getElementById('space-warning').textContent='קיצור בדיקה: נוספו 1,000 נקודות! ⭐';return;
             } else if(moonShortcut.endsWith('powers')) {moonShortcut='';unlockCurrentPowers();return;
             } else if(moonShortcut.endsWith('gates')) {moonShortcut='';openCurrentGates();return;}
+            // B is also the maze hammer key. A lone B fires after the shortcut window;
+            // the on-screen hammer stays immediate, and typing bibi spends no power.
+            if(currentRealm==='maze'&&moonShortcut.endsWith('b')&&!moonShortcut.endsWith('ab')&&!moonShortcut.endsWith('bub')&&!moonShortcut.endsWith('bib'))deferShortcutHammer();
             // Do not activate E/R/T/B powers while typing a shortcut.
-            if(letter&&['powers','gates','aba','abubu'].some(word=>Array.from({length:word.length-1},(_,i)=>word.slice(0,i+1)).some(prefix=>moonShortcut.endsWith(prefix))))return;
+            if(letter&&['powers','gates','aba','abubu','bibi'].some(word=>Array.from({length:word.length-1},(_,i)=>word.slice(0,i+1)).some(prefix=>moonShortcut.endsWith(prefix))))return;
         }
         if(currentRealm==='maze'&&!e.repeat){const power={KeyB:'hammer',KeyM:'map',KeyE:'echo',KeyF:'freeze',KeyT:'anchor',KeyL:'lantern'}[e.code];if(power){useMazePower(power);return;}}
         if(e.code === 'ArrowLeft') keys.left = true;
@@ -1494,9 +1571,9 @@
         const elapsed = clock.getDelta();
         const avatarStartX=playerGroup.position.x, avatarStartZ=playerGroup.position.z;
         const avatarStartTime=simulationTime;
-        updateMazeRealtime(elapsed);
-        if (gameState === 'BREATHING') {
-            updateBreathingPause(elapsed);
+        if(gameState!=='CUSTOMIZING')updateMazeRealtime(elapsed);
+        if (gameState === 'BREATHING' || gameState === 'CUSTOMIZING') {
+            if(gameState==='BREATHING')updateBreathingPause(elapsed);
             accumulator = 0;
         } else {
             accumulator += Math.min(elapsed, 0.1);
@@ -1521,7 +1598,7 @@
 
     function stepGame() {
         const delta = 1/60;
-        if (gameState === 'BREATHING') return;
+        if (gameState === 'BREATHING' || gameState === 'CUSTOMIZING') return;
         const time = simulationTime += delta;
         if (isSpaceRealmOpen && spaceWall.position.y > -7) spaceWall.position.y = Math.max(-7, spaceWall.position.y - 12*delta);
 

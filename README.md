@@ -51,7 +51,7 @@ git push -u origin main
 
 No GitHub remote has been configured for you. The tracked `.openai/hosting.json` identifies the existing Sites publication; it contains no credentials. To host elsewhere, run `npm run build` and publish the contents of `build/` using any static host.
 
-Testing shortcuts (type during play; physical English letter keys also work with a Hebrew keyboard): `aba` opens the Moon route; `abubu` sets speed ×5; `powers` unlocks all powers of the current world (and replenishes their uses/cooldowns); `gates` opens its progression gates. In the Maze, `gates` allows finishing by walking to the exit without rescuing everyone or answering the exit drill. Shortcuts do not award rescue points or mark friends rescued. Powers still reset on entering another world.
+Testing shortcuts (type during play; physical English letter keys also work with a Hebrew keyboard): `aba` opens the Moon route; `abubu` sets speed ×5; `bibi` adds exactly 1,000 points (ignoring score multipliers); `powers` unlocks all powers of the current world (and replenishes their uses/cooldowns); `gates` opens its progression gates. In the Maze, `gates` allows finishing by walking to the exit without rescuing everyone or answering the exit drill. The points shortcut grants testing points without marking friends rescued or granting their powers. Other shortcuts do not award points. In the Maze, a lone `B` waits two seconds to distinguish the hammer command from `bibi`; its on-screen hammer button remains immediate. Powers still reset on entering another world.
 
 Super-jump doubles horizontal movement while airborne on Earth and Moon, creating a longer leap without changing its height. Ground movement and ordinary jumps keep their existing speed; the leap multiplier also stacks with the testing speed shortcut.
 
@@ -72,7 +72,7 @@ The command center includes both image and 3D character editors. Under **Charact
 Open `/control-center/` for all configuration and testing:
 
 - **Global parameters**: starting world and selected character.
-- **Global features**: 3D characters toggle.
+- **Global features**: starting 3D character toggle and the character-customization unlock.
 - **Drills**: catalog and metadata filters. Each drill has **Main**, **Parameters**, and **Features** only when it defines features. Main includes standalone testing, examples, metadata and returned results. Math's design examples are available here too.
 - **Characters**: image/accessory editor and 3D models, embedded in the same command center. **Use in game** selects a model and enables 3D characters.
 
@@ -81,6 +81,8 @@ Open `/control-center/` for all configuration and testing:
 Settings are browser-local under `moon-rainbow.features.v1`, and update ordinary open game tabs through storage events. Saved starting-world changes apply when a new game starts. This public testing page does not change every player's defaults. Reset affects only these settings.
 
 The **3D characters** flag keeps its original stable ID `pipCharacter` (default **off**) for compatibility. Choose the model under Global parameters. A shared game link pins the world, character, flags and validated drill settings (`dp.<drillId>` JSON). For example, `/?stage=moon&character=luna&ff.pipCharacter=1` starts the Moon with Luna. Explicit URL values override browser defaults for that tab. If storage is unavailable, copy a game link to carry the setup.
+
+**In-game customization** is controlled by `characterCustomization`, enabled by default. The HUD shows progress toward 200 points; at 200 or more it opens a four-character picker. Choosing Pip, Moss, Sunny or Luna enables that 3D model for the current run, including when the starting-character flag is off or pinned by a testing link. This does not spend points or overwrite browser defaults. The game, powers, and maze-map countdown pause while the picker is open. Escape or Cancel resumes without changing the character. Disabling the feature closes the picker and restores the configured starting appearance. The command center remains available for development independently of gameplay unlocks.
 
 Characters share the same player position, collision radius, growth, jumping, stage transitions, powers, and death logic. Each is loaded only when selected and enabled; loading or failed assets retain the classic character. Loaded models are cached, and switching during loading always honors the most recent selection. Idle/walk/jump follow actual movement; the exported vertical hop is removed so physics remains authoritative. New-power screens play Wave. Cloaking affects all model materials.
 

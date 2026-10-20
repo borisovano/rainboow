@@ -7,7 +7,8 @@
   const STORAGE_KEY='moon-rainbow.features.v1';
   const globalParameters={defaultParams:{stage:'earth',character:'pip'},parameters:{character:{type:'string',title:'Character',enum:['pip','moss','sunny','luna'],description:'Used when the 3D characters feature is enabled.'},stage:{type:'string',title:'Starting world',enum:['earth','moon','rainbow','maze'],description:'Starting world for new games. A world specified in the game URL takes priority.'}}};
   const definitions=Object.freeze([
-    {id:'pipCharacter',title:'3D characters',category:'Characters',defaultValue:false,description:'Use the selected animated Blender character in every world. Choose a character under Global parameters.'},
+    {id:'pipCharacter',title:'3D characters',category:'Characters',defaultValue:false,description:'Start with the selected animated Blender character in every world. Choose a starting character under Global parameters.'},
+    {id:'characterCustomization',title:'Character customization at 200 points',category:'Characters',defaultValue:true,description:'Unlock the in-game character picker at 200 points. Choosing a character applies its 3D model for this run. Type bibi during play to add exactly 1,000 testing points.'},
     ...drills.flatMap(drill=>Object.entries(drill.features).map(([id,feature])=>({id:drill.id+'.'+id,owner:drill.id,featureId:id,title:feature.title,description:feature.description,category:drill.title,defaultValue:feature.defaultEnabled})))
   ].map(Object.freeze));
   const manifest=id=>drills.find(d=>d.id===id||d.aliases.includes(id));
